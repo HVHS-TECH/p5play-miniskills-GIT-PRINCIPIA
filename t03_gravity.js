@@ -11,7 +11,7 @@
 /*******************************************************/
 
 /*******************************************************/
-// classes
+// Classes
 /*******************************************************/
 
 class Vec2 {
@@ -22,7 +22,7 @@ class Vec2 {
 }
 
 /*******************************************************/
-// vars
+// Vars
 /*******************************************************/
 
 //Canvas
@@ -65,7 +65,7 @@ function setup() {
 	CNV_HEIGHT = windowHeight - 100;
 	cnv = new Canvas(CNV_WIDTH, CNV_HEIGHT); //-100 for heading
 
-	//Initialize sprite
+	//Initialize sprites
 	var s_rect_scrn_pos = CanvasToScreen(s_rect_pos);
 	s_rect = new Sprite(s_rect_scrn_pos.x, s_rect_scrn_pos.y, S_RECT_W * CNV_HEIGHT, S_RECT_H * CNV_HEIGHT, 'd');
 	s_rect.color = 'rgb(100, 46, 7)';
@@ -102,7 +102,7 @@ function CanvasToScreen(pos) {
 /*******************************************************/
 function draw() {
 	background('ccc'); 
-	s_paddle.rotation += S_PADDLE_ROT_SPEED;
+	s_paddle.rotation += S_PADDLE_ROT_SPEED; //Increase rotation without needing to counter gravity
 }
 
 /*******************************************************/

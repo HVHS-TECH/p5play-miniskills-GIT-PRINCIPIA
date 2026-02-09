@@ -140,6 +140,7 @@ function setup() {
 	sprites.push(new Sprite(s_platform_scrn_pos.x,s_platform_scrn_pos.y,S_PLATFORM_W * CNV_WIDTH, S_PLATFORM_H * CNV_HEIGHT, 'k'));
 	sprites[s_platform].color = 'rgb(200,200,200)';
 	sprites[s_platform].rotation = -20;
+	sprites[s_platform].friction = 0; //Slippy platform to direct object
 	
 	const s_paddle_scrn_pos = CanvasToScreen(s_paddle_pos);
 	s_paddle = sprites.length;

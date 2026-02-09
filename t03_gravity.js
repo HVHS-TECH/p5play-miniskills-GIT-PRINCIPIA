@@ -11,6 +11,17 @@
 /*******************************************************/
 
 /*******************************************************/
+// classes
+/*******************************************************/
+
+class Vec2 {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+}
+
+/*******************************************************/
 // vars
 /*******************************************************/
 
@@ -21,21 +32,24 @@ var CNV_HEIGHT;
 
 //Sprite
 var s_rect;
-var s_rect_x = 0; //x pos
-var s_rect_y = 0.8; //y pos
+var s_rect_pos = new Vec2(0, 0.7);
 const S_RECT_W = 0.1; //width
 const S_RECT_H = 0.1; //height
 
 var s_circ;
-var s_circ_x = 0.1; //x pos
-var s_circ_y = -0.7; //y pos
+var s_circ_pos = new Vec2(0.1, -0.7);
 const S_CIRC_D = 0.2; //Diameter
 
 var s_platform;
-var s_platform_x = -0.2;
-var s_platform_y = -0.8;
+var s_platform_pos = new Vec2(-0.3, -0.9);
 const S_PLATFORM_W = 0.3; //Width
 const S_PLATFORM_H = 0.05; //Height
+
+var s_paddle;
+var s_paddle_pos = new Vec2(-0.7, -0.875);
+const S_PADDLE_W = 0.2;
+const S_PADDLE_H = 0.01;
+const S_PADDLE_ROT_SPEED = -5;
 
 /*******************************************************/
 // setup()
@@ -52,23 +66,27 @@ function setup() {
 	cnv = new Canvas(CNV_WIDTH, CNV_HEIGHT); //-100 for heading
 
 	//Initialize sprite
-	s_rect = new Sprite((s_rect_x + 1) * CNV_WIDTH / 2, (-s_rect_y + 1) * CNV_HEIGHT / 2, S_RECT_W * CNV_HEIGHT, S_RECT_H * CNV_HEIGHT, 'd');
+	var s_rect_scrn_pos = CanvasToScreen(s_rect_pos);
+	s_rect = new Sprite(s_rect_scrn_pos.x, s_rect_scrn_pos.y, S_RECT_W * CNV_HEIGHT, S_RECT_H * CNV_HEIGHT, 'd');
 	s_rect.color = 'rgb(100, 46, 7)';
 	s_rect.vel.y = 4;
 	s_rect.rotationSpeed = 35.97;
 
-	s_circ = new Sprite((s_circ_x + 1) * CNV_WIDTH / 2, (-s_circ_y + 1) * CNV_HEIGHT / 2, S_CIRC_D * CNV_HEIGHT, 'k');
+	var s_circ_scrn_pos = CanvasToScreen(s_circ_pos);
+	s_circ = new Sprite(s_circ_scrn_pos.x, s_circ_scrn_pos.y, S_CIRC_D * CNV_HEIGHT, 'k');
 	s_circ.color = 'rgb(40, 100, 100)';
 
-	s_platform = new Sprite(s_platform_x,)
+	var s_platform_scrn_pos = CanvasToScreen(s_platform_pos);
+	s_platform = new Sprite(s_platform_scrn_pos.x,s_platform_scrn_pos.y,S_PLATFORM_W * CNV_WIDTH, S_PLATFORM_H * CNV_HEIGHT, 'k');
+	s_platform.color = 'rgb(200,200,200)';
+	s_platform.rotation = -20;
+	
+	var s_paddle_scrn_pos = CanvasToScreen(s_paddle_pos);
+	s_paddle = new Sprite(s_paddle_scrn_pos.x, s_paddle_scrn_pos.y, S_PADDLE_W * CNV_WIDTH, S_PADDLE_H * CNV_HEIGHT, 'k');
+	s_paddle.color = 'rgb(200,100,100)';
 }
 
-class Vec2 {
-	constructor(x, y) {
-		this.x = x;
-		this.y = y;
-	}
-}
+
 
 /*******************************************************/
 // CanvasToScreen(x,y)
@@ -84,6 +102,7 @@ function CanvasToScreen(pos) {
 /*******************************************************/
 function draw() {
 	background('ccc'); 
+	s_paddle.rotation += S_PADDLE_ROT_SPEED;
 }
 
 /*******************************************************/

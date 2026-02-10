@@ -4,11 +4,6 @@
 // Written by Alex Curwen
 /*******************************************************/
 
-/*******************************************************/
-// Notes:
-// middle is [0, 0], top is [0, 1], bottom is [0, -1]
-// position and sizes are relative to canvas HEIGHT
-/*******************************************************/
 
 /*******************************************************/
 // Classes
@@ -19,6 +14,35 @@ class Vec2 {
 		this.x = x;
 		this.y = y;
 	}
+	//Multiply
+	mul(other) {
+		if (typeof other == "number") {
+			other = new Vec2(other, other);
+		}
+		return new Vec2(this.x * other.x, this.y * other.y);
+	}
+	//Divide
+	div(other) {
+		if (typeof other == "number") {
+			other = new Vec2(other, other);
+		}
+		return new Vec2(this.x / other.x, this.y / other.y);
+	}
+	//Add
+	add(other) {
+		if (typeof other == "number") {
+			other = new Vec2(other, other);
+		}
+		return new Vec2(this.x + other.x, this.y + other.y);
+	}
+	//Subtract
+	sub(other) {
+		if (typeof other == "number") {
+			other = new Vec2(other, other);
+		}
+		return new Vec2(this.x - other.x, this.y - other.y);
+	}
+	
 }
 
 //Simple implementation, not very robust or expandable!
@@ -28,12 +52,15 @@ class LineAnimation {
 		this.end = end;
 		this.time = time; //Length of animation (half) in frames
 		this.sprite_idx = sprite_idx;
-		this.step = start_time; //Steps through the animation
+		while (start_time < 0) {
+			start_time += time * 2;
+		}
+		this.step = start_time % (time * 2); //Steps through the animation
 		var dx = start.x - end.x;
 		var dy = start.y - end.y;
 		this.step_dx = dx / time;
 		this.step_dy = dy / time;
-
+		
 		if (this.step <= this.time) {
 			sprites[this.sprite_idx].x = Lerp(start.x, end.x, this.step / this.time);
 			sprites[this.sprite_idx].y = Lerp(start.y, end.y, this.step / this.time);
@@ -67,45 +94,53 @@ class LineAnimation {
 
 //Canvas
 var cnv;
-var CNV_WIDTH;
-var CNV_HEIGHT;
+var cnv_width;
+var cnv_height;
+
+
+//Camera
+var c_pos = new Vec2(0, 0);
+var c_zoom = 40; //Camera zoom
+var fbo;
+const FBO_WIDTH = 1000;
+const FBO_HEIGHT = 1000;
 
 //Sprites
 var sprites = []; //List of all sprite objects
 var animations = []; //List of all animation objects
 
 var s_rect;
-const s_rect_pos = new Vec2(0, 0.7);
-const S_RECT_W = 0.1; //width
-const S_RECT_H = 0.1; //height
+const S_RECT_POS = new Vec2(0, 7);
+const S_RECT_W = 1; //width
+const S_RECT_H = 1; //height
 
 var s_circ;
-const s_circ_pos = new Vec2(0.1, -0.7);
-const S_CIRC_D = 0.2; //Diameter
+const S_CIRC_POS = new Vec2(1, -7);
+const S_CIRC_D = 4; //Diameter
 
 var s_platform;
-const s_platform_pos = new Vec2(-0.3, -0.9);
-const S_PLATFORM_W = 0.3; //Width
-const S_PLATFORM_H = 0.05; //Height
+const S_PLATFORM_POS = new Vec2(-3, -9);
+const S_PLATFORM_W = 5; //Width
+const S_PLATFORM_H = 0.5; //Height
 
 var s_paddle;
-const s_paddle_pos = new Vec2(-0.7, -0.875);
-const S_PADDLE_W = 0.2;
-const S_PADDLE_H = 0.01;
-const S_PADDLE_ROT_SPEED = -5;
+const S_PADDLE_POS = new Vec2(-7, -9.5);
+const S_PADDLE_W = 4;
+const S_PADDLE_H = 0.2;
+const S_PADDLE_ROT_SPEED = -2;
 
 var s_lift;
-const s_lift_pos_START = new Vec2(-0.9, -0.95);
-const s_lift_pos_END = new Vec2(-0.9, 0.8);
-const s_lift_time = 60 * 2; //4 seconds of 60 fps
-const s_lift_start = 60 * 1; //Starts at 5 seconds into the animation
-const S_LIFT_W = 0.1;
-const S_LIFT_H = 0.01;
+const S_LIFT_POS_START = new Vec2(-9, -11);
+const S_LIFT_POS_END = new Vec2(-9, 10);
+const S_LIFT_TIME = 60 * 2.1; //4 seconds of 60 fps
+const S_LIFT_START = 60 * 3.2; //Starts at n seconds into the animation
+const S_LIFT_W = 4;
+const S_LIFT_H = 0.2;
 
 var s_wedge;
-const s_wedge_pos = new Vec2(-0.9, 0.9);
-const S_WEDGE_W = 0.1;
-const S_WEDGE_H = 0.01;
+const S_WEDGE_POS = new Vec2(-9, 9);
+const S_WEDGE_W = 4;
+const S_WEDGE_H = 0.2;
 
 
 /*******************************************************/
@@ -116,80 +151,127 @@ function setup() {
 	console.log("setup: ");
 	//Initialize world
 	world.gravity.y = 9.81;
-
+	
 	//Initialize canvas
-	CNV_WIDTH = windowWidth;
-	CNV_HEIGHT = windowHeight - 100;
-	cnv = new Canvas(CNV_WIDTH, CNV_HEIGHT); //-100 for heading
+	cnv_width = windowWidth;
+	cnv_height = windowHeight - 100;
+	
+	cnv = new Canvas(cnv_width, cnv_height, WEBGL); 
+
+	fbo = createFramebuffer();
+	fbo.resize(FBO_WIDTH, FBO_HEIGHT);
 
 	//Initialize sprites
-	const s_rect_scrn_pos = CanvasToScreen(s_rect_pos);
+	const s_rect_scrn_pos = WorldToCanvas(S_RECT_POS);
+	const s_rect_scrn_size = WorldToCanvasSize(S_RECT_W, S_RECT_H);
 	s_rect = sprites.length;
-	sprites.push(new Sprite(s_rect_scrn_pos.x, s_rect_scrn_pos.y, S_RECT_W * CNV_HEIGHT, S_RECT_H * CNV_HEIGHT, 'd'));
+	sprites.push(new Sprite(s_rect_scrn_pos.x, s_rect_scrn_pos.y, s_rect_scrn_size.x, s_rect_scrn_size.y, 'd'));
 	sprites[s_rect].color = 'rgb(100, 46, 7)';
 	sprites[s_rect].vel.y = 4;
 	sprites[s_rect].rotationSpeed = 35.97;
 
-	const s_circ_scrn_pos = CanvasToScreen(s_circ_pos);
+	const s_circ_scrn_pos = WorldToCanvas(S_CIRC_POS);
+	const s_circ_scrn_size = WorldToCanvasSize(S_CIRC_D, S_CIRC_D);
 	s_circ = sprites.length;
-	sprites.push(new Sprite(s_circ_scrn_pos.x, s_circ_scrn_pos.y, S_CIRC_D * CNV_HEIGHT, 'k'));
+	sprites.push(new Sprite(s_circ_scrn_pos.x, s_circ_scrn_pos.y, s_circ_scrn_size.x, 'k'));
 	sprites[s_circ].color = 'rgb(40, 100, 100)';
 
-	const s_platform_scrn_pos = CanvasToScreen(s_platform_pos);
+	const s_platform_scrn_pos = WorldToCanvas(S_PLATFORM_POS);
+	const s_platform_scrn_size = WorldToCanvasSize(S_PLATFORM_W, S_PLATFORM_H);
 	s_platform = sprites.length;
-	sprites.push(new Sprite(s_platform_scrn_pos.x,s_platform_scrn_pos.y,S_PLATFORM_W * CNV_WIDTH, S_PLATFORM_H * CNV_HEIGHT, 'k'));
+	sprites.push(new Sprite(s_platform_scrn_pos.x,s_platform_scrn_pos.y,s_platform_scrn_size.x, s_platform_scrn_size.y, 'k'));
 	sprites[s_platform].color = 'rgb(200,200,200)';
 	sprites[s_platform].rotation = -20;
 	sprites[s_platform].friction = 0; //Slippy platform to direct object
 	
-	const s_paddle_scrn_pos = CanvasToScreen(s_paddle_pos);
+	const s_paddle_scrn_pos = WorldToCanvas(S_PADDLE_POS);
+	const s_paddle_scrn_size = WorldToCanvasSize(S_PADDLE_W, S_PADDLE_H);
 	s_paddle = sprites.length;
-	sprites.push(new Sprite(s_paddle_scrn_pos.x, s_paddle_scrn_pos.y, S_PADDLE_W * CNV_WIDTH, S_PADDLE_H * CNV_HEIGHT, 'k'));
+	sprites.push(new Sprite(s_paddle_scrn_pos.x, s_paddle_scrn_pos.y, s_paddle_scrn_size.x, s_paddle_scrn_size.y, 'k'));
 	sprites[s_paddle].color = 'rgb(200,100,100)';
 	sprites[s_paddle].friction = 0; //Slippy paddle to launch object
 
-	const s_lift_scrn_pos = CanvasToScreen(s_lift_pos_START);
-	const s_lift_scrn_pos_end = CanvasToScreen(s_lift_pos_END);
+	const s_lift_scrn_pos = WorldToCanvas(S_LIFT_POS_START);
+	const s_lift_scrn_pos_end = WorldToCanvas(S_LIFT_POS_END);
+	const s_lift_scrn_size = WorldToCanvasSize(S_LIFT_W, S_LIFT_H);
 	s_lift = sprites.length;
-	sprites.push(new Sprite(s_lift_scrn_pos.x, s_lift_scrn_pos.y, S_LIFT_W * CNV_WIDTH, S_LIFT_H * CNV_HEIGHT, 'k'));
-	animations.push(new LineAnimation(s_lift_scrn_pos, s_lift_scrn_pos_end, s_lift_time, s_lift_start, s_lift));
+	sprites.push(new Sprite(s_lift_scrn_pos.x, s_lift_scrn_pos.y, s_lift_scrn_size.x, s_lift_scrn_size.y, 'k'));
+	animations.push(new LineAnimation(s_lift_scrn_pos, s_lift_scrn_pos_end, S_LIFT_TIME, S_LIFT_START, s_lift));
+	sprites[s_lift].color = 'rgb(100,100,100)'
 
-	const s_wedge_scrn_pos = CanvasToScreen(s_wedge_pos);
+	const s_wedge_scrn_pos = WorldToCanvas(S_WEDGE_POS);
+	const s_wedge_scrn_size = WorldToCanvasSize(S_WEDGE_W, S_WEDGE_H);
 	s_wedge = sprites.length;
-	sprites.push(new Sprite(s_wedge_scrn_pos.x, s_wedge_scrn_pos.y, S_WEDGE_W * CNV_WIDTH, S_WEDGE_H * CNV_HEIGHT, 'k'));
+	sprites.push(new Sprite(s_wedge_scrn_pos.x, s_wedge_scrn_pos.y, s_wedge_scrn_size.x, s_wedge_scrn_size.y, 'k'));
 	sprites[s_wedge].color = 'rgb(200,100,100)';
 	sprites[s_wedge].friction = 0; //Slippy wedge to direct object
-	sprites[s_wedge].rotation = -30;
+	sprites[s_wedge].rotation = -20;
+
+
+
+	for (var s = 0; s < sprites.length; s++) {
+		sprites[s].autoDraw = false; //Use the framebuffer for drawing
+	}
 }
 
 
 
-/*******************************************************/
-// CanvasToScreen(x,y)
-//Returns [x,y] transformed from canvas space [-1,-1] - [1,1] to world space [-CNV_WIDTH / 2, -CNV_HEIGHT / 2] - [CNV_WIDTH / 2, CNV_HEIGHT / 2]
-/*******************************************************/
-function CanvasToScreen(pos) {
-	return new Vec2((pos.x + 1) * CNV_WIDTH / 2, (-pos.y + 1) * CNV_HEIGHT / 2);
-}	
-
-/*******************************************************/
-//Lerp()
-/*******************************************************/
-function Lerp(a,b,k) {
-	return a + (b - a) * k;
-}
 
 
 /*******************************************************/
 // draw()
 /*******************************************************/
 function draw() {
-	background('ccc'); 
 	sprites[s_paddle].rotation += S_PADDLE_ROT_SPEED; //Increase rotation without needing to counter gravity
+	
 	for (var a = 0; a < animations.length; a++) {
 		animations[a].Update();
 	}
+	fbo.begin();
+	//Fill Background
+	background('black'); 
+	noStroke();
+	
+	allSprites.draw(); 
+	fbo.end();
+	background("black"); // Main canvas background
+	
+	// Draw the framebuffer texture onto the screen
+	image(fbo, -cnv_width/2, -cnv_height/2, cnv_height, cnv_height);
 }
+
+/*******************************************************/
+// Helper functions
+/*******************************************************/
+
+/*******************************************************/
+// WorldToCanvas(x,y)
+//Returns [x,y] transformed from world space to canvas space
+/*******************************************************/
+function WorldToCanvas(world_pos) {
+	let local_pos = world_pos.mul(c_zoom).sub(c_pos); //Multiply by the zoom and subtract the camera position
+	return local_pos.mul(new Vec2(1, -1));//.add(new Vec2(cnv_width / 2, cnv_height / 2));
+}
+
+/*******************************************************/
+// WorldToCanvasSize(x,y)
+//Returns [x,y] size transformed from world space to canvas space
+/*******************************************************/
+function WorldToCanvasSize(w, h) {
+	let world_size = new Vec2(w, h);
+	let local_size = world_size.mul(c_zoom);
+	return local_size;
+}
+
+/*******************************************************/
+//Lerp(a, b, k)
+//Lerps from a to b by amount k
+/*******************************************************/
+function Lerp(a,b,k) {
+	return a + (b - a) * k;
+}
+
+
 
 /*******************************************************/
 //  END OF APP

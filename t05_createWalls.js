@@ -102,8 +102,9 @@ var cnv_height;
 var c_pos = new Vec2(0, 0);
 var c_zoom = 40; //Camera zoom
 var fbo;
-const FBO_WIDTH = 1000;
-const FBO_HEIGHT = 1000 * windowHeight / windowWidth;
+const FBO_SCALE = 2000;
+var FBO_WIDTH;
+var FBO_HEIGHT;
 
 //Sprites
 var sprites = []; //List of all sprite objects
@@ -144,6 +145,11 @@ const S_WEDGE_POS = new Vec2(-9, 9);
 const S_WEDGE_W = 4;
 const S_WEDGE_H = 0.2;
 
+var s_ball;
+const S_BALL_POS = new Vec2(-20, 0);
+const S_BALL_D = 0.5;
+
+
 //Walls
 var s_wall_left;
 var s_wall_right;
@@ -165,10 +171,14 @@ function setup() {
 	
 	cnv = new Canvas(cnv_width, cnv_height, WEBGL); 
 
+	
+	FBO_WIDTH = FBO_SCALE;
+	FBO_HEIGHT = FBO_SCALE * cnv_height / cnv_width;
 	fbo = createFramebuffer();
 	fbo.resize(FBO_WIDTH, FBO_HEIGHT);
 
 	//Initialize sprites
+	/* //Sprites from animation
 	const s_rect_scrn_pos = WorldToCanvas(S_RECT_POS);
 	const s_rect_scrn_size = WorldToCanvasSize(S_RECT_W, S_RECT_H);
 	s_rect = sprites.length;
@@ -213,6 +223,17 @@ function setup() {
 	sprites[s_wedge].color = 'rgb(200,100,100)';
 	sprites[s_wedge].friction = 0; //Slippy wedge to direct object
 	sprites[s_wedge].rotation = -20;
+	*/
+	const s_ball_scrn_pos = WorldToCanvas(S_BALL_POS);
+	const s_ball_scrn_size = WorldToCanvasSize(S_BALL_D, S_BALL_D);
+	s_ball = sprites.length;
+	sprites.push(new Sprite(s_ball_scrn_pos.x, s_ball_scrn_pos.y, s_ball_scrn_size.x, 'd'));
+	sprites[s_ball].friction = 0;
+	sprites[s_ball].bounciness = 1;
+	sprites[s_ball].gravityScale = 0; //No gravity
+	sprites[s_ball].vel.y = 10;
+	sprites[s_ball].vel.x = -10;
+	sprites[s_ball].color = 'rgb(50, 150, 160)';
 
 	CreateWalls();
 
@@ -226,28 +247,39 @@ function setup() {
 // CreateWalls()
 /*******************************************************/
 function CreateWalls() {
+	const WALL_BOUNCINESS = 0;
+	const WALL_FRICTION = 0;
+
 	s_wall_left = sprites.length;
 	sprites.push(new Sprite(-FBO_WIDTH / 2, 0, 8, FBO_HEIGHT, 'k'));
 	sprites[s_wall_left].color = 'rgb(200,0,0)';
+	sprites[s_wall_left].bounciness = WALL_BOUNCINESS;
+	sprites[s_wall_left].friction = WALL_FRICTION;
 
 	s_wall_right = sprites.length;
 	sprites.push(new Sprite(FBO_WIDTH / 2, 0, 8, FBO_HEIGHT, 'k'));
 	sprites[s_wall_right].color = 'rgb(100,100,0)';
+	sprites[s_wall_right].bounciness = WALL_BOUNCINESS;
+	sprites[s_wall_right].friction = WALL_FRICTION;
 	
 	s_wall_top = sprites.length;
 	sprites.push(new Sprite(0, FBO_HEIGHT / 2, FBO_WIDTH, 8, 'k'));
 	sprites[s_wall_top].color = 'rgb(0,200,0)';
+	sprites[s_wall_top].bounciness = WALL_BOUNCINESS;
+	sprites[s_wall_top].friction = WALL_FRICTION;
 
 	s_wall_bottom = sprites.length;
 	sprites.push(new Sprite(0, -FBO_HEIGHT / 2, FBO_WIDTH, 8, 'k'));
 	sprites[s_wall_bottom].color = 'rgb(0,100,100)';
+	sprites[s_wall_bottom].bounciness = WALL_BOUNCINESS;
+	sprites[s_wall_bottom].friction = WALL_FRICTION;
 }
 
 /*******************************************************/
 // draw()
 /*******************************************************/
 function draw() {
-	sprites[s_paddle].rotation += S_PADDLE_ROT_SPEED; //Increase rotation without needing to counter gravity
+	//sprites[s_paddle].rotation += S_PADDLE_ROT_SPEED; //Increase rotation without needing to counter gravity
 	
 	for (var a = 0; a < animations.length; a++) {
 		animations[a].Update();
@@ -262,7 +294,7 @@ function draw() {
 	background("black"); // Main canvas background
 	
 	// Draw the framebuffer texture onto the screen
-	image(fbo, -cnv_width/2, -cnv_height/2, cnv_height, cnv_height);
+	image(fbo, -cnv_width/2, -cnv_height/2, cnv_width, cnv_height);
 }
 
 /*******************************************************/

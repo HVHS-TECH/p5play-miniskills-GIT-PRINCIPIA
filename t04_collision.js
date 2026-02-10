@@ -103,7 +103,7 @@ var c_pos = new Vec2(0, 0);
 var c_zoom = 40; //Camera zoom
 var fbo;
 const FBO_WIDTH = 1000;
-const FBO_HEIGHT = 1000;
+const FBO_HEIGHT = 1000 * windowHeight / windowWidth;
 
 //Sprites
 var sprites = []; //List of all sprite objects

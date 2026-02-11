@@ -135,7 +135,7 @@ var cnv_height;
 var c_pos = new Vec2(0, 0);
 var c_zoom = 40; //Camera zoom
 var fbo;
-const FBO_SCALE = 2000;
+const FBO_SCALE = 4000;
 var FBO_WIDTH;
 var FBO_HEIGHT;
 
@@ -197,6 +197,8 @@ var s_wall_left;
 var s_wall_right;
 var s_wall_top;
 var s_wall_bottom;
+const WALL_BOUNCINESS = 0;
+const WALL_FRICTION = 0;
 
 //Images
 var imgBG;
@@ -232,60 +234,61 @@ function setup() {
 
 	//Initialize sprites
 	//Sprites from animation
-	const S_RECT_SCRN_POS = WorldToCanvas(S_RECT_POS);
-	const S_RECT_SCRN_SIZE = WorldToCanvasSize(S_RECT_W, S_RECT_H);
+	const S_RECT_SCRN_POS = WorldToCamera(S_RECT_POS);
+	const S_RECT_SCRN_SIZE = WorldToCameraSize(S_RECT_W, S_RECT_H);
 	s_rect = sprites.length;
 	sprites.push(new Sprite(S_RECT_SCRN_POS.x, S_RECT_SCRN_POS.y, S_RECT_SCRN_SIZE.x, S_RECT_SCRN_SIZE.y, 'd'));
 	sprites[s_rect].color = 'rgb(100, 46, 7)';
 	sprites[s_rect].vel.y = 4;
 	sprites[s_rect].rotationSpeed = 35.97;
 
-	const S_CIRC_SCRN_POS = WorldToCanvas(S_CIRC_POS);
-	const S_CIRC_SCRN_SIZE = WorldToCanvasSize(S_CIRC_D, S_CIRC_D);
+	const S_CIRC_SCRN_POS = WorldToCamera(S_CIRC_POS);
+	const S_CIRC_SCRN_SIZE = WorldToCameraSize(S_CIRC_D, S_CIRC_D);
 	s_circ = sprites.length;
 	sprites.push(new Sprite(S_CIRC_SCRN_POS.x, S_CIRC_SCRN_POS.y, S_CIRC_SCRN_SIZE.x, 'k'));
 	sprites[s_circ].color = 'rgb(40, 100, 100)';
 
-	const S_PLATFORM_SCRN_POS = WorldToCanvas(S_PLATFORM_POS);
-	const S_PLATFORM_SCRN_SIZE = WorldToCanvasSize(S_PLATFORM_W, S_PLATFORM_H);
+	const S_PLATFORM_SCRN_POS = WorldToCamera(S_PLATFORM_POS);
+	const S_PLATFORM_SCRN_SIZE = WorldToCameraSize(S_PLATFORM_W, S_PLATFORM_H);
 	s_platform = sprites.length;
 	sprites.push(new Sprite(S_PLATFORM_SCRN_POS.x,S_PLATFORM_SCRN_POS.y,S_PLATFORM_SCRN_SIZE.x, S_PLATFORM_SCRN_SIZE.y, 'k'));
 	sprites[s_platform].color = 'rgb(200,200,200)';
 	sprites[s_platform].rotation = -20;
 	sprites[s_platform].friction = 0; //Slippy platform to direct object
 	
-	const S_PADDLE_SCRN_POS = WorldToCanvas(S_PADDLE_POS);
-	const S_PADDLE_SCRN_SIZE = WorldToCanvasSize(S_PADDLE_W, S_PADDLE_H);
+	const S_PADDLE_SCRN_POS = WorldToCamera(S_PADDLE_POS);
+	const S_PADDLE_SCRN_SIZE = WorldToCameraSize(S_PADDLE_W, S_PADDLE_H);
 	s_paddle = sprites.length;
 	sprites.push(new Sprite(S_PADDLE_SCRN_POS.x, S_PADDLE_SCRN_POS.y, S_PADDLE_SCRN_SIZE.x, S_PADDLE_SCRN_SIZE.y, 'k'));
 	sprites[s_paddle].color = 'rgb(200,100,100)';
 	sprites[s_paddle].friction = 0; //Slippy paddle to launch object
 	sprites[s_paddle].rotationSpeed = S_PADDLE_ROT_SPEED;
 
-	const S_LIFT_SCRN_POS = WorldToCanvas(S_LIFT_POS_START);
-	const S_LIFT_SCRN_POS_end = WorldToCanvas(S_LIFT_POS_END);
-	const S_LIFT_SCRN_SIZE = WorldToCanvasSize(S_LIFT_W, S_LIFT_H);
+	const S_LIFT_SCRN_POS = WorldToCamera(S_LIFT_POS_START);
+	const S_LIFT_SCRN_POS_end = WorldToCamera(S_LIFT_POS_END);
+	const S_LIFT_SCRN_SIZE = WorldToCameraSize(S_LIFT_W, S_LIFT_H);
 	s_lift = sprites.length;
 	sprites.push(new Sprite(S_LIFT_SCRN_POS.x, S_LIFT_SCRN_POS.y, S_LIFT_SCRN_SIZE.x, S_LIFT_SCRN_SIZE.y, 'k'));
 	animations.push(new LineAnimation(S_LIFT_SCRN_POS, S_LIFT_SCRN_POS_end, S_LIFT_TIME, S_LIFT_START, s_lift));
 	sprites[s_lift].color = 'rgb(100,100,100)'
 
-	const S_WEDGE_SCRN_POS = WorldToCanvas(S_WEDGE_POS);
-	const S_WEDGE_SCRN_SIZE = WorldToCanvasSize(S_WEDGE_W, S_WEDGE_H);
+	const S_WEDGE_SCRN_POS = WorldToCamera(S_WEDGE_POS);
+	const S_WEDGE_SCRN_SIZE = WorldToCameraSize(S_WEDGE_W, S_WEDGE_H);
 	s_wedge = sprites.length;
 	sprites.push(new Sprite(S_WEDGE_SCRN_POS.x, S_WEDGE_SCRN_POS.y, S_WEDGE_SCRN_SIZE.x, S_WEDGE_SCRN_SIZE.y, 'k'));
 	sprites[s_wedge].color = 'rgb(200,100,100)';
 	sprites[s_wedge].friction = 0; //Slippy wedge to direct object
 	sprites[s_wedge].rotation = -20;
 	
-	const S_CAR_SCRN_POS = WorldToCanvas(S_CAR_POS);
-	const S_CAR_SCRN_SIZE = WorldToCanvasSize(S_CAR_W, S_CAR_H);
+	const S_CAR_SCRN_POS = WorldToCamera(S_CAR_POS);
+	const S_CAR_SCRN_SIZE = WorldToCameraSize(S_CAR_W, S_CAR_H);
 	s_car = sprites.length;
-	sprites.push(new Sprite(S_CAR_SCRN_POS.x, S_CAR_SCRN_POS.y, S_CAR_SCRN_SIZE.x, S_CAR_SCRN_SIZE.y, 'k'));
+	sprites.push(new Sprite(S_CAR_SCRN_POS.x, S_CAR_SCRN_POS.y, S_CAR_SCRN_SIZE.x, S_CAR_SCRN_SIZE.y, 'd'));
 	sprites[s_car].color = 'rgb(30,30,100)';
-	sprites[s_car].gravity_scale = 0;
+	sprites[s_car].gravityScale = 0;
+	sprites[s_car].mass = 1000;
 	var vars = [];
-	vars.push(new Variable("Speed", 0.05)); //how fast it moves toward the mouse
+	vars.push(new Variable("Speed", 0.01)); //how fast it moves toward the mouse
 	vars.push(new Variable("TurnSpeed", 0.1));
 	animations.push(new CustomAnimation(s_car, vars));
 	animations[animations.length - 1].Update = 
@@ -299,14 +302,30 @@ function setup() {
 		let vel_y = (forward - backward) * this.GetVar("Speed");
 		let turn = (turn_right - turn_left) * this.GetVar("TurnSpeed");
 
-		sprites[this.sprite_idx].vel.x += Math.sin(sprites[this.sprite_idx].rotation / 180 * Math.PI) * vel_y;
-		sprites[this.sprite_idx].vel.y += -Math.cos(sprites[this.sprite_idx].rotation / 180 * Math.PI) * vel_y;
+
+		let dir = sprites[this.sprite_idx].rotation / 180 * Math.PI;
+		sprites[this.sprite_idx].vel.x += Math.sin(dir) * vel_y;
+		sprites[this.sprite_idx].vel.y += -Math.cos(dir) * vel_y;
 		sprites[this.sprite_idx].vel.x *= 0.99;
 		sprites[this.sprite_idx].vel.y *= 0.99;
-		sprites[this.sprite_idx].rotation += turn;
+
+
+		//Drifting
+		let loc_vel_x = Math.sin(dir) * sprites[this.sprite_idx].vel.y + Math.cos(dir) * sprites[this.sprite_idx].vel.x;
+		let loc_vel_y = -Math.cos(dir) * sprites[this.sprite_idx].vel.y + Math.sin(dir) * sprites[this.sprite_idx].vel.x;
+
+		loc_vel_x *= 0.95;
+		if (loc_vel_y > 20) loc_vel_y = 20;
+
+		sprites[this.sprite_idx].vel.x = Math.cos(dir) * loc_vel_x + Math.sin(dir) * loc_vel_y;
+		sprites[this.sprite_idx].vel.y = Math.sin(dir) * loc_vel_x - Math.cos(dir) * loc_vel_y;
+
+
+		sprites[this.sprite_idx].rotationSpeed += turn * loc_vel_y / 100;
+		sprites[this.sprite_idx].rotationSpeed *= 0.9;
+		
 
 	};
-	sprites[s_car].gravity_scale = 0;
 
 	CreateWalls();
 	SpawnAliens();
@@ -333,13 +352,14 @@ function SpawnAliens() {
 
 		const vel = new Vec2(random(ALIEN_MIN_VEL, ALIEN_MAX_VEL) * random(VEL_ARRAY),random(ALIEN_MIN_VEL, ALIEN_MAX_VEL) * random(VEL_ARRAY));
 
-		const scrn_size = WorldToCanvasSize(1, 1);
+		const scrn_size = WorldToCameraSize(1, 1);
 		sprites.push(new Sprite(scrn_pos.x, scrn_pos.y, scrn_size.x, scrn_size.y, 'd'));
 		sprites[sprites.length - 1].color = 'rgb(100,200,200)';
 		sprites[sprites.length - 1].bounciness = 1;
   		sprites[sprites.length - 1].friction = 0;
 		sprites[sprites.length - 1].vel.x = vel.x;
 		sprites[sprites.length - 1].vel.y = vel.y;
+		sprites[sprites.length - 1].mass = 0.1;
 		alienGroup.add(sprites[sprites.length - 1]);
 		
 	}
@@ -353,8 +373,7 @@ function SpawnAliens() {
 // CreateWalls()
 /*******************************************************/
 function CreateWalls() {
-	const WALL_BOUNCINESS = 0;
-	const WALL_FRICTION = 0;
+	
 
 	s_wall_left = sprites.length;
 	sprites.push(new Sprite(-FBO_WIDTH / 2, 0, 8, FBO_HEIGHT, 'k'));
@@ -419,6 +438,8 @@ function draw() {
 // Resize the canvas and fbo
 /*******************************************************/
 function windowResized() {
+	
+
 	cnv_width = windowWidth;
 	cnv_height = windowHeight - 100;
 	cnv.resize(cnv_width, cnv_height);
@@ -450,7 +471,7 @@ function windowResized() {
 // Called when the ball hits an alien
 // Deletes the alien that the ball hit
 /*******************************************************/
-function AlienHit(alien, ball) {
+function AlienHit(alien, car) {
 	alien.remove(); //remove the alien
 }
 
@@ -459,19 +480,19 @@ function AlienHit(alien, ball) {
 /*******************************************************/
 
 /*******************************************************/
-// WorldToCanvas(x,y)
-//Returns [x,y] transformed from world space to canvas space
+// WorldToCamera(x,y)
+//Returns [x,y] transformed from world space to camera space
 /*******************************************************/
-function WorldToCanvas(world_pos) {
+function WorldToCamera(world_pos) {
 	let local_pos = world_pos.mul(c_zoom).sub(c_pos); //Multiply by the zoom and subtract the camera position
 	return local_pos.mul(new Vec2(1, -1));//.add(new Vec2(cnv_width / 2, cnv_height / 2));
 }
 
 /*******************************************************/
-// WorldToCanvasSize(x,y)
-//Returns [x,y] size transformed from world space to canvas space
+// WorldToCameraSize(x,y)
+//Returns [x,y] size transformed from world space to camera space
 /*******************************************************/
-function WorldToCanvasSize(w, h) {
+function WorldToCameraSize(w, h) {
 	let world_size = new Vec2(w, h);
 	let local_size = world_size.mul(c_zoom);
 	return local_size;

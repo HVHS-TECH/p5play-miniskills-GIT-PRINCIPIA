@@ -174,9 +174,9 @@ var imgFace;
 /*******************************************************/
 function preload() {
 
-	imgBG   = loadImage('../assets/images/space.jfif');
+	imgBG   = loadImage('../assets/images/space.jpg');
 
-	imgFace = loadImage('../assets/images/face.png');
+	imgFace = loadImage('../assets/images/face.jpg');
 
 }
 
@@ -185,6 +185,7 @@ function preload() {
 //Initializes the scene and its content
 /*******************************************************/
 function setup() {
+	
 	console.log("setup: ");
 	//Initialize world
 	world.gravity.y = 9.81;
@@ -349,7 +350,8 @@ function draw() {
 	}
 	fbo.begin();
 	//Fill Background
-	background(imgBG); 
+	background('black'); 
+	image(imgBG, -cnv_width, -cnv_height, cnv_width * 2, cnv_height * 2);
 	noStroke();
 	
 	allSprites.draw(); 

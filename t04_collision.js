@@ -102,8 +102,8 @@ var cnv_height;
 var c_pos = new Vec2(0, 0);
 var c_zoom = 40; //Camera zoom
 var fbo;
-const FBO_WIDTH = 1000;
-const FBO_HEIGHT = 1000 * windowHeight / windowWidth;
+var FBO_WIDTH;
+var FBO_HEIGHT;
 
 //Sprites
 var sprites = []; //List of all sprite objects
@@ -155,6 +155,8 @@ function setup() {
 	//Initialize canvas
 	cnv_width = windowWidth;
 	cnv_height = windowHeight - 100;
+	FBO_WIDTH = 2000;
+	FBO_HEIGHT = 2000 * cnv_height / cnv_width
 	
 	cnv = new Canvas(cnv_width, cnv_height, WEBGL); 
 
@@ -237,7 +239,7 @@ function draw() {
 	background("black"); // Main canvas background
 	
 	// Draw the framebuffer texture onto the screen
-	image(fbo, -cnv_width/2, -cnv_height/2, cnv_height, cnv_height);
+	image(fbo, -cnv_width/2, -cnv_height/2, cnv_width, cnv_height);
 }
 
 /*******************************************************/

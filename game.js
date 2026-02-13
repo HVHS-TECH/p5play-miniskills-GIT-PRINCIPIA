@@ -89,12 +89,17 @@ function setup() {
 /*******************************************************/
 function draw() {
 	noStroke();
-	//lights();
+	lights();
 	fbo.begin();
-	var pan = (kb.pressing("right") ? -0.1 : 0) - (kb.pressing("left") ? -0.1 : 0);
+	var pan = (kb.pressing("arrow_right") ? -1 : 0) - (kb.pressing("arrow_left") ? -1 : 0);
 	cam.pan(pan);
-	var tilt = (kb.pressing("up") ? -0.1 : 0) - (kb.pressing("down") ? -0.1 : 0);
+	var tilt = (kb.pressing("arrow_up") ? -1 : 0) - (kb.pressing("arrow_down") ? -1 : 0);
 	cam.tilt(tilt);
+
+	var walk = (kb.pressing("w") ? -1 : 0) - (kb.pressing("s") ? -1 : 0);
+	var strafe = (kb.pressing("d") ? 1 : 0) - (kb.pressing("a") ? 1 : 0);
+	var fly = (kb.pressing("space") ? -1 : 0) - (kb.pressing("shift") ? -1 : 0);
+	cam.move(strafe, fly, walk);
 	//Fill Background
 	background('black'); 
 	box();

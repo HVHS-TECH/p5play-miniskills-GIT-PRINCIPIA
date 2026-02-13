@@ -9,24 +9,26 @@
 // Classes
 /*******************************************************/
 
-class GameObject {
-    constructor(vertices, indices, normals, pos, rot) {
-        this.pos = pos;
-        this.rot = rot;
+class Plane {
+	constructor(model, pos, rot) {
+		this.model = model;
+		this.pos = pos;
+		this.rot = rot;
+	}
 
-        this.geometry = new p5.Geometry();
-        this.geometry.vertices = vertices;
-		this.geometry.faces = indices;
-		this.geometry.vertexNormals = normals;
-    }
+	Update() {
 
-    Draw() {
-        translate(this.pos);
-        rotateX(this.rot.x);
-        rotateY(this.rot.y);
-        rotateZ(this.rot.z);
-        model(this.geometry);
-    }
+	}
+
+	Draw() {
+		push();
+		translate(this.pos);
+		rotateX(this.rot.x);
+		rotateY(this.rot.y);
+		rotateZ(this.rot.z);
+		model(this.model);
+		pop();
+	}
 }
 
 
@@ -42,18 +44,31 @@ var cnv_height;
 
 //Camera
 var fbo;
-const FBO_SCALE = 4000;
+const FBO_SCALE = 10000;
 var FBO_WIDTH;
 var FBO_HEIGHT;
 
 //Camera
 var cam;
+var cam_pos;
+var cam_rot;
+const CAM_PITCH_SENS = 1;
+const CAM_YAW_SENS = 1;
 
 //Objects
 var objects = [];
 
+//Models
+var plane;
+var plane_model;
 
-
+/*******************************************************/
+// Preload()
+/*******************************************************/
+function preload() {
+	plane_model = loadModel('../assets/models/Plane.obj');
+	plane = new Plane(plane_model, Vec3(0, 0, 0), Vec3(0, 0, 0));
+}
 
 /*******************************************************/
 // setup()
@@ -75,11 +90,9 @@ function setup() {
 	fbo = createFramebuffer();
 	fbo.resize(FBO_WIDTH, FBO_HEIGHT);
 
-	cam = createCamera();
-
-  	cam.setPosition(0, 0, 100);
-  	cam.lookAt(0, 0, 0);
-
+	cam = createCamera(0, 0, 10, 0, 0, 0, 0, 1, 0);
+	cam_pos = Vec3(0, 0, 10);
+	cam_rot = Vec3(0, 0, 0);
 }
 
 
@@ -89,21 +102,37 @@ function setup() {
 /*******************************************************/
 function draw() {
 	noStroke();
-	lights();
-	fbo.begin();
-	var pan = (kb.pressing("arrow_right") ? -1 : 0) - (kb.pressing("arrow_left") ? -1 : 0);
-	cam.pan(pan);
-	var tilt = (kb.pressing("arrow_up") ? -1 : 0) - (kb.pressing("arrow_down") ? -1 : 0);
-	cam.tilt(tilt);
 
-	var walk = (kb.pressing("w") ? -1 : 0) - (kb.pressing("s") ? -1 : 0);
-	var strafe = (kb.pressing("d") ? 1 : 0) - (kb.pressing("a") ? 1 : 0);
-	var fly = (kb.pressing("space") ? -1 : 0) - (kb.pressing("shift") ? -1 : 0);
-	cam.move(strafe, fly, walk);
-	//Fill Background
+	lights();
+
+	fbo.begin();
+
+	cam_pos.x += (KeyDown('d') - KeyDown('a'));
+	cam_pos.y -= (KeyDown('space') - KeyDown('shift'));
+	cam_pos.z -= (KeyDown('w') - KeyDown('s'));
+
+	requestPointerLock();
+
+	var roty = -movedX * CAM_YAW_SENS;
+	var rotx = movedY * CAM_PITCH_SENS;
+
+	cam.move((KeyDown('d') - KeyDown('a')), -(KeyDown('space') - KeyDown('shift')), -(KeyDown('w') - KeyDown('s')));
+	cam.pan(roty);
+	cam.tilt(rotx);
+
+
+	scale(100, -100, 100);
 	background('black'); 
-	box();
+
+	//Draw plane
+	
+	plane.Draw();
+	
+
+
+
 	fbo.end();
+
 	background("black"); // Main canvas background
 	
 	// Draw the framebuffer texture onto the screen
@@ -138,11 +167,20 @@ function windowResized() {
 
 /*******************************************************/
 // Vec3(x,y,z)
+// compression of createVector
 /*******************************************************/
 function Vec3(x, y, z) {
     return createVector(x, y, z);
 }
 
+
+/*******************************************************/
+// KeyDown(key)
+// compression of kb.pressing
+/*******************************************************/
+function KeyDown(key) {
+	return kb.pressing(key);
+}
 
 /*******************************************************/
 //  END OF APP

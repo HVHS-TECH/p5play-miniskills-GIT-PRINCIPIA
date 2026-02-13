@@ -327,8 +327,8 @@ function setup() {
 		sprites[this.sprite_idx].vel.y = Math.sin(dir) * loc_vel_x - Math.cos(dir) * loc_vel_y;
 
 
-		sprites[this.sprite_idx].rotationSpeed += turn * loc_vel_y / 100;
-		sprites[this.sprite_idx].rotationSpeed *= 0.9;
+		sprites[this.sprite_idx].rotation += turn * loc_vel_y / 10;
+		sprites[this.sprite_idx].rotationSpeed *= 0.8;
 		
 
 	};

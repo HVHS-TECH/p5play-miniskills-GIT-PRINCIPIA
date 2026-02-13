@@ -10,12 +10,14 @@
 /*******************************************************/
 
 class GameObject {
-    constructor(vertices, pos, rot) {
+    constructor(vertices, indices, normals, pos, rot) {
         this.pos = pos;
         this.rot = rot;
 
         this.geometry = new p5.Geometry();
         this.geometry.vertices = vertices;
+		this.geometry.faces = indices;
+		this.geometry.vertexNormals = normals;
     }
 
     Draw() {
@@ -75,7 +77,8 @@ function setup() {
 
 	cam = createCamera();
 
-    objects.push(new GameObject([Vec3(0, 0, 0), Vec3(10, 0, 0), Vec3(10, 10, 0)], Vec3(0, 0, 0), Vec3(45, 45, 45)));
+  	cam.setPosition(0, 0, 100);
+  	cam.lookAt(0, 0, 0);
 
 }
 
@@ -85,11 +88,16 @@ function setup() {
 // draw()
 /*******************************************************/
 function draw() {
-
+	noStroke();
+	//lights();
 	fbo.begin();
+	var pan = (kb.pressing("right") ? -0.1 : 0) - (kb.pressing("left") ? -0.1 : 0);
+	cam.pan(pan);
+	var tilt = (kb.pressing("up") ? -0.1 : 0) - (kb.pressing("down") ? -0.1 : 0);
+	cam.tilt(tilt);
 	//Fill Background
 	background('black'); 
-    objects[0].Draw();
+	box();
 	fbo.end();
 	background("black"); // Main canvas background
 	

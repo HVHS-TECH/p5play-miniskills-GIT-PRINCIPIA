@@ -9,14 +9,20 @@
 // Classes
 /*******************************************************/
 
-class Quaternion {
-	constructor(x, y, z, w) {
-		this.x = x;
-		this.y = y;
-		this.z = z;
-		this.w = w;
+//Terrain Chunk
+class Chunk {
+	constructor(pos) {
+		this.pos = pos;
+	}
+	Draw() {
+		push();
+		translate(this.pos);
+		scale(10, 10, 10);
+		model(terrain_model);
+		pop();
 	}
 }
+
 
 class Plane {
 	constructor(model, pos, rot) {
@@ -28,9 +34,9 @@ class Plane {
 	Update() {
 		//Local movement
 		let movement = createVector(0,0,0);
-		movement.x = (KeyDown('d') - KeyDown('a')) * 0.1;
-		movement.y = (KeyDown('space') - KeyDown('shift')) * 0.1;
-		movement.z = -(KeyDown('w') - KeyDown('s')) * 0.1;
+		movement.x = 0;//(KeyDown('d') - KeyDown('a')) * 0.1;
+		movement.y = (KeyDown('space') - KeyDown('shift')) * 1;
+		movement.z = -2;//-(KeyDown('w') - KeyDown('s')) * 0.1;
 
 		//Transform movement into world space using plane.rot
 		let plane_rot_quat = quat.fromEuler(quat.create(), this.rot.x, this.rot.y, this.rot.z);
@@ -54,6 +60,9 @@ class Plane {
 
 		//console.log(plane_rot_quat);
 		//console.log(this.rot);
+		let world_up_glmat = vec3.clone(up);
+		let world_forward_glmat = vec3.clone(forward);
+		let world_right_glmat = vec3.clone(right);
 
 		//Multiply movement by vectors
 		let movement_world = createVector(0,0,0);
@@ -80,8 +89,18 @@ class Plane {
 		this.pos.y += movement_world.y;
 		this.pos.z += movement_world.z;
 
-		this.rot.y -= (KeyDown('arrow_right') - KeyDown('arrow_left')) * 0.1;
+		
+		
+		let yaw = -(KeyDown('d') - KeyDown('a')) / 100;
+		let pitch = (KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
+		let roll = (KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
 
+		quat.multiply(plane_rot_quat, plane_rot_quat, quat.setAxisAngle(quat.create(), world_forward_glmat, roll));//Roll doesn't work
+		quat.multiply(plane_rot_quat, plane_rot_quat, quat.setAxisAngle(quat.create(), world_right_glmat, pitch));//Pitch doesn't work
+		quat.multiply(plane_rot_quat, plane_rot_quat, quat.setAxisAngle(quat.create(), world_up_glmat, yaw));
+		
+		this.rot = quaternion_to_euler(plane_rot_quat);
+		//this.rot.y += yaw;
 		cam_rot.x += movedY * CAM_PITCH_SENS;
 		cam_rot.y += movedX * CAM_YAW_SENS;
 		cam_pos = this.pos;
@@ -139,20 +158,23 @@ var cam_rot;
 const CAM_PITCH_SENS = 0.3;
 const CAM_YAW_SENS = 0.3;
 
-//Objects
-var objects = [];
+
 
 //Models
 var plane;
 var plane_model;
+
+//Terrain
+var terrain;
+var terrain_model;
 
 /*******************************************************/
 // Preload()
 /*******************************************************/
 function preload() {
 	plane_model = loadModel('../assets/models/Plane.obj');
-	plane = new Plane(plane_model, Vec3(0, 0, 0), Vec3(0, 0, 0));
-
+	
+	terrain_model = loadModel('../assets/models/Terrain.obj');
 	
 }
 
@@ -178,6 +200,11 @@ function setup() {
 	vec3.transformQuat(right, right, q);
 	console.log(right + " should be 0, 0, -1");
 
+	let rot = quaternion_to_euler(q);
+	console.log(rot + " should be 0, 90, 0");
+
+
+
 	//Initialize canvas
 	cnv_width = windowWidth;
 	cnv_height = windowHeight - 100;
@@ -190,8 +217,14 @@ function setup() {
 	fbo = createFramebuffer();
 	fbo.resize(FBO_WIDTH, FBO_HEIGHT);
 
+	//Camera
+	
 	cam_pos = Vec3(0, 0, 0);
 	cam_rot = Vec3(0, 0, 0);
+
+	//Objects
+	plane = new Plane(plane_model, createVector(0, 100, 0), Vec3(0, 0, 0));
+	terrain = new Chunk(createVector(0, -100, 0), 100);
 }
 
 
@@ -202,9 +235,11 @@ function setup() {
 function draw() {
 	noStroke();
 
-	lights();
 
 	fbo.begin();
+	directionalLight(128, 128, 128, 0, 0.3, -1);
+	ambientLight(64);
+	perspective(60, FBO_WIDTH / FBO_HEIGHT, 100, 1000000);
 	
 	
 	
@@ -223,6 +258,9 @@ function draw() {
 	//Draw plane
 	plane.Update();
 	plane.Draw();
+
+	//Draw terrain
+	terrain.Draw();
 
 	scale(0.01,-0.01,0.01);
 	box(); //Debug cube
@@ -287,60 +325,34 @@ function Vec3(v) {
 // compression of kb.pressing
 /*******************************************************/
 function KeyDown(key) {
-	return kb.pressing(key);
+	return kb.pressing(key) ? 1 : 0;
 }
 
-//-----------------------------------------//
-//Thanks to https://math.stackexchange.com/questions/2975109/how-to-convert-euler-angles-to-quaternions-and-get-the-same-euler-angles-back-fr
-//Code was originally written in python, I have converted it to js
-function euler_to_quaternion(r) {
-    let pitch = r.x;
-	let yaw = r.y;
-	let roll = r.z;
-
-    let qx = Math.sin(roll/2) * Math.cos(pitch/2) * Math.cos(yaw/2) - Math.cos(roll/2) * Math.sin(pitch/2) * Math.sin(yaw/2);
-    let qy = Math.cos(roll/2) * Math.sin(pitch/2) * Math.cos(yaw/2) + Math.sin(roll/2) * Math.cos(pitch/2) * Math.sin(yaw/2);
-    let qz = Math.cos(roll/2) * Math.cos(pitch/2) * Math.sin(yaw/2) - Math.sin(roll/2) * Math.sin(pitch/2) * Math.cos(yaw/2);
-    let qw = Math.cos(roll/2) * Math.cos(pitch/2) * Math.cos(yaw/2) + Math.sin(roll/2) * Math.sin(pitch/2) * Math.sin(yaw/2);
-    return new Quaternion(qx, qy, qz, qw);
-}
 
 function quaternion_to_euler(q) {
-    let x, y, z, w = (q.x, q.y, q.z, q.w);
-    t0 = +2.0 * (w * x + y * z);
-    t1 = +1.0 - 2.0 * (x * x + y * y);
-    roll = Math.atan2(t0, t1);
-    t2 = +2.0 * (w * y - z * x)
-    t2 = (t2 > +1.0) ? +1.0 : t2;
-    t2 = (t2 < -1.0) ? -1.0 : t2;
-    pitch = Math.asin(t2);
-    t3 = +2.0 * (w * z + x * y);
-    t4 = +1.0 - 2.0 * (y * y + z * z);
-    yaw = Math.atan2(t3, t4);
-    return createVector(pitch, yaw, roll);
-}
+	//Thanks to https://stackoverflow.com/questions/53033620/how-to-convert-euler-angles-to-quaternions-and-get-the-same-euler-angles-back-fr for the original code (in python)
+	let x = q[0], y = q[1], z = q[2], w = q[3];
+	
+	// ZYX order (yaw, pitch, roll)
+	let t1 = 2.0 * (w * z + x * y);
+	let t2 = 1.0 - 2.0 * (y * y + z * z);
+	let yaw = Math.atan2(t1, t2);
 
-//-----------------------------------------//
+	let t3 = 2.0 * (w * y - z * x);
+	t3 = t3 > 1.0 ? 1.0 : t3;
+	t3 = t3 < -1.0 ? -1.0 : t3;
+	let pitch = Math.asin(t3);
 
-/*******************************************************/
-//QuatMulVec3(q, v)
-//Where q is a quaternion [x, y, z, w] and v is a p5 vector object
-/*******************************************************/
-function QuatMulVec3(v, q) {
+	let t4 = 2.0 * (w * x + y * z);
+	let t5 = 1.0 - 2.0 * (x * x + y * y);
+	let roll = Math.atan2(t4, t5);
 
-	let tx = 2 * (q.y * v.y - q.z * v.z);
-	let ty = 2 * (q.z * v.x - q.x * v.y);
-	let tz = 2 * (q.x * v.z - q.y * v.x);
-		
 	return createVector(
-		v.x + q.w * tx + (q.y * tz - q.z * ty), //x
-		v.y + q.w * ty + (q.z * tx - q.x * tz), //y
-		v.z + q.w * tz + (q.x * ty - q.y * tx) 	//z
+		yaw * 180 / Math.PI, 
+		pitch * 180 / Math.PI,
+		roll * 180 / Math.PI
 	);
 }
-
-
-
 
 /*******************************************************/
 //  END OF APP

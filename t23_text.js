@@ -320,7 +320,7 @@ function setup() {
 		let loc_vel_x = Math.sin(dir) * sprites[this.sprite_idx].vel.y + Math.cos(dir) * sprites[this.sprite_idx].vel.x;
 		let loc_vel_y = -Math.cos(dir) * sprites[this.sprite_idx].vel.y + Math.sin(dir) * sprites[this.sprite_idx].vel.x;
 
-		loc_vel_x *= 0.95;
+		loc_vel_x *= 0.9;
 		if (loc_vel_y > 20) loc_vel_y = 20;
 
 		sprites[this.sprite_idx].vel.x = Math.cos(dir) * loc_vel_x + Math.sin(dir) * loc_vel_y;

@@ -29,21 +29,21 @@ class Plane {
 		this.model = model;
 		this.pos = pos;
 		this.rot = rot;
-		this.quat = quat.fromEuler(quat.create(), this.rot.x, this.rot.y, this.rot.z);
+		this.q = quat.fromEuler(quat.create(), rot.x, rot.y, rot.z);
 	}
 
 	Update() {
 		//Local movement
 		let movement = createVector(0,0,0);
-		movement.x = 0;//(KeyDown('d') - KeyDown('a')) * 0.1;
-		movement.y = (KeyDown('space') - KeyDown('shift')) * 1;
-		movement.z = -2;//-(KeyDown('w') - KeyDown('s')) * 0.1;
+		movement.x = (KeyDown('d') - KeyDown('a')) * 1;
+		movement.y = (KeyDown('space') - KeyDown('shift')) * 0.7;
+		movement.z = (KeyDown('w') - KeyDown('s')) * 2;
 
 		//Transform movement into world space using plane.rot
-		let plane_rot_quat = this.quat;
+		let plane_rot_quat = this.q;
 		//this.rot = quaternion_to_euler(plane_rot_quat);
 		//Declare orientation vectors
-		let forward = vec3.fromValues(0, 0, 1);
+		let forward = vec3.fromValues(0, 0, -1);
 		let up = vec3.fromValues(0, 1, 0);
 		let right = vec3.fromValues(1, 0, 0);
 
@@ -51,13 +51,10 @@ class Plane {
 		vec3.transformQuat(forward, forward, plane_rot_quat);
 		vec3.transformQuat(up, up, plane_rot_quat);
 		vec3.transformQuat(right, right, plane_rot_quat);
-		line(0, 0, 0, forward.x * 1000, forward.y * 1000, forward.z * 1000);
-		line(0, 0, 0, up.x * 1000, up.y * 1000, up.z * 1000);
-		line(0, 0, 0, right.x * 1000, right.y * 1000, right.z * 1000);
-
 		console.log("Forward: " + forward);
 		console.log("Up: " + up);
 		console.log("Right: " + right);
+        
 
 		//console.log(plane_rot_quat);
 		//console.log(this.rot);
@@ -92,19 +89,39 @@ class Plane {
 
 		
 		
-		let yaw = -(KeyDown('d') - KeyDown('a')) / 100;
-		let pitch = (KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
-		let roll = (KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
+		let yaw = (KeyDown('q') - KeyDown('e')) / 100;
+		let pitch = -(KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
+		let roll = -(KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
+        
 		quat.normalize(plane_rot_quat, plane_rot_quat);
-		quat.multiply(plane_rot_quat, plane_rot_quat, quat.normalize(quat.create(), quat.setAxisAngle(quat.create(), world_forward_glmat, pitch)));//Roll doesn't work
+
+        let pitch_q = quat.create();
+        quat.setAxisAngle(pitch_q, world_right_glmat, pitch)
+        quat.normalize(pitch_q, pitch_q);
+
+		quat.multiply(plane_rot_quat, plane_rot_quat, pitch_q);
+
 		quat.normalize(plane_rot_quat, plane_rot_quat);
-		quat.multiply(plane_rot_quat, plane_rot_quat, quat.normalize(quat.create(), quat.setAxisAngle(quat.create(), world_right_glmat, roll)));//Pitch doesn't work
-		ternionsquat.normalize(plane_rot_quat, plane_rot_quat);
-		quat.multiply(plane_rot_quat, plane_rot_quat, quat.normalize(quat.create(), quat.setAxisAngle(quat.create(), world_up_glmat, yaw)));
+
+        let yaw_q = quat.create();
+        quat.setAxisAngle(yaw_q, world_up_glmat, yaw)
+        quat.normalize(yaw_q, yaw_q);
+
+		quat.multiply(plane_rot_quat, plane_rot_quat, yaw_q);
 		quat.normalize(plane_rot_quat, plane_rot_quat);
-		this.quat = plane_rot_quat;
+
+        let roll_q = quat.create();
+        quat.setAxisAngle(roll_q, world_forward_glmat, roll)
+        quat.normalize(roll_q, roll_q);
+
+		quat.multiply(plane_rot_quat, plane_rot_quat, roll_q);
+
+		quat.normalize(plane_rot_quat, plane_rot_quat);
+
+		this.q = plane_rot_quat;
+
 		this.rot = quaternion_to_euler(plane_rot_quat);
-		//this.rot.y += yaw;
+        console.log("This.rot = " + this.rot + ", this.quat = " + this.quat);
 		cam_rot.x += movedY * CAM_PITCH_SENS;
 		cam_rot.y += movedX * CAM_YAW_SENS;
 		cam_pos = this.pos;
@@ -192,7 +209,7 @@ function setup() {
 	let up = vec3.fromValues(0, 1, 0);
 	let q = quat.fromEuler(quat.create(), 0, 90, 0);
 
-	console.log(q);
+	console.log(q + " should be 0, 0.7071, 0, 0.7071");
 	vec3.transformQuat(up, up, q);
 	console.log(up + " should be 0, 1, 0");
 
@@ -207,10 +224,27 @@ function setup() {
 	let rot = quaternion_to_euler(q);
 	console.log(rot + " should be 0, 90, 0");
 
-	q = quat.fromEuler(vec3.fromValues(90, 0, 0));
-	rot = quaternion_to_euler(q);
-	console.log(rot + " should be 90, 0, 0");
+    var q2 = quat.create();
+	quat.fromEuler(q2, 90, 0, 0);
+    console.log("q2 " + q2 + " should be 0.7071, 0, 0, 0.7071");
+	rot = quaternion_to_euler(q2);
+	console.log("q2 euler " + rot + " should be 90, 0, 0");
 
+
+    var q3 = quat.create();
+    quat.fromEuler(q3, 0, 0, 90);
+    console.log("q3 " + q3 + " should be 0, 0, 0.7071, 0.7071");
+    rot = quaternion_to_euler(q3);
+    console.log("q3 euler " + rot + " should be 0, 0, 90");
+
+
+
+    var vec_2_rotate = vec3.fromValues(0, 0, 1);
+    var axis = vec3.fromValues(1, 0, 0);
+    var rotation = quat.create();
+    quat.setAxisAngle(rotation, axis, 90);
+    vec3.transformQuat(vec_2_rotate, rotation);
+    console.log("Vec " + vec_2_rotate + " should be 0, 1, 0");
 
 	//Initialize canvas
 	cnv_width = windowWidth;
@@ -230,7 +264,7 @@ function setup() {
 	cam_rot = Vec3(0, 0, 0);
 
 	//Objects
-	plane = new Plane(plane_model, createVector(0, 100, 0), Vec3(0, 0, 45));
+	plane = new Plane(plane_model, createVector(0, 100, 0), Vec3(0, 45, 0));
 	terrain = new Chunk(createVector(0, -100, 0), 100);
 }
 
@@ -343,21 +377,21 @@ function quaternion_to_euler(q) {
 	// ZYX order (yaw, pitch, roll)
 	let t1 = 2.0 * (w * z + x * y);
 	let t2 = 1.0 - 2.0 * (y * y + z * z);
-	let yaw = Math.atan2(t1, t2);
+	let vz = Math.atan2(t1, t2);
 
 	let t3 = 2.0 * (w * y - z * x);
 	t3 = t3 > 1.0 ? 1.0 : t3;
 	t3 = t3 < -1.0 ? -1.0 : t3;
-	let pitch = Math.asin(t3);
+	let vy = Math.asin(t3);
 
 	let t4 = 2.0 * (w * x + y * z);
 	let t5 = 1.0 - 2.0 * (x * x + y * y);
-	let roll = Math.atan2(t4, t5);
+	let vx = Math.atan2(t4, t5);
 
 	return createVector(
-		roll * 180 / Math.PI, 
-		pitch * 180 / Math.PI,
-		roll * 180 / Math.PI
+		vx * 180 / Math.PI, 
+		vy * 180 / Math.PI,
+		vz * 180 / Math.PI
 	);
 }
 

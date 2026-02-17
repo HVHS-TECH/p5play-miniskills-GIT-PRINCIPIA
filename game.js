@@ -98,24 +98,31 @@ class Plane {
         quat.setAxisAngle(pitch_q, world_right_glmat, pitch);
         quat.normalize(pitch_q, pitch_q);
 
-		quat.multiply(plane_rot_quat, pitch_q, plane_rot_quat);
+		//quat.multiply(plane_rot_quat, pitch_q, plane_rot_quat);
 
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
         let yaw_q = quat.create();
         quat.setAxisAngle(yaw_q, world_up_glmat, yaw);
         quat.normalize(yaw_q, yaw_q);
 
-		quat.multiply(plane_rot_quat, yaw_q, plane_rot_quat);
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.multiply(plane_rot_quat, yaw_q, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
         let roll_q = quat.create();
         quat.setAxisAngle(roll_q, world_forward_glmat, roll);
         quat.normalize(roll_q, roll_q);
 
-		quat.multiply(plane_rot_quat, roll_q, plane_rot_quat);
+		//quat.multiply(plane_rot_quat, roll_q, plane_rot_quat);
 
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
+		let pitch_yaw_q = quat.create();
+		quat.multiply(pitch_yaw_q, pitch_q, yaw_q);
+
+		let pitch_yaw_roll_q = quat.create();
+		quat.multiply(pitch_yaw_roll_q, roll_q, pitch_yaw_q);
+
+		quat.multiply(plane_rot_quat, plane_rot_quat, pitch_yaw_roll_q);
 
 		this.q = plane_rot_quat;
 

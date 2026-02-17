@@ -87,8 +87,23 @@ class Plane {
 		this.pos.y += movement_world.y;
 		this.pos.z += movement_world.z;
 
-		
-		
+		strokeWeight(100);
+		push();
+		rotateX(cam_rot.x);
+		rotateY(cam_rot.y);
+		//rotateX(-plane.rot.x);
+		//rotateY(-plane.rot.y);
+		//rotateZ(-plane.rot.z);
+		translate(p5.Vector.mult(cam_pos, -1));
+		stroke('green'); //y
+		//line(this.pos.x, this.pos.y, this.pos.z, this.pos.x + world_up_glmat.x,this.pos.y + world_up_glmat.y, this.pos.z + world_up_glmat.z);
+
+		stroke('red'); //x
+		line(this.pos.x, this.pos.y, this.pos.z, this.pos.x + world_right.x,this.pos.y + world_right.y, this.pos.z + world_right.z);
+
+		stroke('blue'); //z
+		//line(this.pos.x, this.pos.y, this.pos.z, this.pos.x + world_forward_glmat.x,this.pos.y + world_forward_glmat.y, this.pos.z + world_forward_glmat.z);
+		pop();
 		let yaw = (KeyDown('q') - KeyDown('e')) / 100;
 		let pitch = -(KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
 		let roll = -(KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
@@ -96,7 +111,7 @@ class Plane {
 		quat.normalize(plane_rot_quat, plane_rot_quat);
 
         let pitch_q = quat.create();
-        quat.setAxisAngle(pitch_q, world_right_glmat, pitch)
+        quat.setAxisAngle(pitch_q, world_right_glmat, pitch);
         quat.normalize(pitch_q, pitch_q);
 
 		quat.multiply(plane_rot_quat, plane_rot_quat, pitch_q);
@@ -104,14 +119,14 @@ class Plane {
 		quat.normalize(plane_rot_quat, plane_rot_quat);
 
         let yaw_q = quat.create();
-        quat.setAxisAngle(yaw_q, world_up_glmat, yaw)
+        quat.setAxisAngle(yaw_q, world_up_glmat, yaw);
         quat.normalize(yaw_q, yaw_q);
 
 		quat.multiply(plane_rot_quat, plane_rot_quat, yaw_q);
 		quat.normalize(plane_rot_quat, plane_rot_quat);
 
         let roll_q = quat.create();
-        quat.setAxisAngle(roll_q, world_forward_glmat, roll)
+        quat.setAxisAngle(roll_q, world_forward_glmat, roll);
         quat.normalize(roll_q, roll_q);
 
 		quat.multiply(plane_rot_quat, plane_rot_quat, roll_q);
@@ -242,8 +257,8 @@ function setup() {
     var vec_2_rotate = vec3.fromValues(0, 0, 1);
     var axis = vec3.fromValues(1, 0, 0);
     var rotation = quat.create();
-    quat.setAxisAngle(rotation, axis, 90);
-    vec3.transformQuat(vec_2_rotate, rotation);
+    quat.setAxisAngle(rotation, axis, -Math.PI / 2);
+    vec3.transformQuat(vec_2_rotate, vec_2_rotate, rotation);
     console.log("Vec " + vec_2_rotate + " should be 0, 1, 0");
 
 	//Initialize canvas
@@ -274,7 +289,6 @@ function setup() {
 // draw()
 /*******************************************************/
 function draw() {
-	noStroke();
 
 
 	fbo.begin();
@@ -296,8 +310,13 @@ function draw() {
 	
 	background('black');
 	
-	//Draw plane
+	//Update plane
 	plane.Update();
+
+	//Draw
+	strokeWeight(10);
+	stroke('black');
+	//Draw plane
 	plane.Draw();
 
 	//Draw terrain

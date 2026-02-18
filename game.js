@@ -29,7 +29,8 @@ class Plane {
 		this.model = model;
 		this.pos = pos;
 		this.rot = rot;
-		this.q = quat.fromEuler(quat.create(), rot.x, rot.y, rot.z);
+		this.q = quat.create();
+		quat.fromEuler(this.q, rot.x, rot.y, rot.z);
 	}
 
 	Update() {
@@ -39,13 +40,18 @@ class Plane {
 		movement.y = (KeyDown('space') - KeyDown('shift')) * 0.7;
 		movement.z = (KeyDown('w') - KeyDown('s')) * 2;
 
+        quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
 		//Transform movement into world space using plane.rot
 		let plane_rot_quat = this.q;
 		//this.rot = quaternion_to_euler(plane_rot_quat);
 		//Declare orientation vectors
-		let forward = vec3.fromValues(0, 0, -1);
+		let forward = vec3.fromValues(0, 0, 1);
 		let up = vec3.fromValues(0, 1, 0);
 		let right = vec3.fromValues(1, 0, 0);
+
+		let forward_glmat = vec3.clone(forward);
+		let up_glmat = vec3.clone(up);
+		let right_glmat = vec3.clone(right);
 
 		//Convert to world space
 		vec3.transformQuat(forward, forward, plane_rot_quat);
@@ -54,7 +60,6 @@ class Plane {
 		console.log("Forward: " + forward);
 		console.log("Up: " + up);
 		console.log("Right: " + right);
-        
 
 		//console.log(plane_rot_quat);
 		//console.log(this.rot);
@@ -120,7 +125,7 @@ class Plane {
 		quat.multiply(pitch_yaw_q, pitch_q, yaw_q);
 
 		let pitch_yaw_roll_q = quat.create();
-		quat.multiply(pitch_yaw_roll_q, roll_q, pitch_yaw_q);
+		quat.multiply(pitch_yaw_roll_q, pitch_yaw_q, roll_q);
 
 		quat.multiply(plane_rot_quat, plane_rot_quat, pitch_yaw_roll_q);
 

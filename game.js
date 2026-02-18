@@ -43,39 +43,50 @@ class Plane {
 		//------------------------------//
 		//NEED TO USE ROTATION MATRICIES//
 		//------------------------------//
-		let rotation = mat4.create();
-		mat4.rotateX(rotation, this.rot.x);
-		mat4.rotateY(rotation, this.rot.y);
-		mat4.rotateZ(rotation, this.rot.z);
+		let modelMatrix = mat4.create();
+		//Make 3 rotation matrices and 'add' them instead
+		mat4.rotateX(modelMatrix, this.rot.x);
+		mat4.rotateY(modelMatrix, this.rot.y);
+		mat4.rotateZ(modelMatrix, this.rot.z);
 
-		//Get the orientation vectors from the matrix:
-		//https://www.google.com/search?q=get+forward%2C+up%2C+right+from+mat4+gl-matrix&sca_esv=0a6eb62db35b49cd&rlz=1C1GCEA_enNZ1200NZ1200&biw=1920&bih=859&ei=2B-VaZLxLY6OseMPzeedsQw&ved=0ahUKEwiSvcSp--GSAxUOR2wGHc1zJ8YQ4dUDCBM&uact=5&oq=get+forward%2C+up%2C+right+from+mat4+gl-matrix&gs_lp=Egxnd3Mtd2l6LXNlcnAiKmdldCBmb3J3YXJkLCB1cCwgcmlnaHQgZnJvbSBtYXQ0IGdsLW1hdHJpeDIHECEYChigAUiMElDHAljrDnABeACQAQCYAfYDoAHXHKoBBzMtMy41LjG4AQPIAQD4AQGYAgqgAvgcwgIIEAAY7wUYsAPCAgUQIRigAcICBBAhGBWYAwCIBgGQBgGSBwcxLjMtMy42oAe5GrIHBTMtMy42uAf1HMIHAzEuOcgHDoAIAQ&sclient=gws-wiz-serp&safe=active&ssui=on
-		//Declare orientation vectors
-		let forward = vec3.fromValues(0, 0, -1);//...
-		let up = vec3.fromValues(0, 1, 0);//...
-		let right = vec3.fromValues(1, 0, 0);//...
+		//Get the orientation vectors from the matrix
+		let forward = vec3.create();
+		let right = vec3.create();
+		let up = vec3.create();
 
-		let forward_glmat = vec3.clone(forward);
-		let up_glmat = vec3.clone(up);
-		let right_glmat = vec3.clone(right);
+		right.x = modelMatrix[0];
+		right.y = modelMatrix[1];
+		right.z = modelMatrix[2];
+		vec3.normalize(right, right);
+
+		up.x = modelMatrix[4];
+		up.y = modelMatrix[5];
+		up.z = modelMatrix[6];
+		vec3.normalize(up, up);
+
+		forward.x = -modelMatrix[8];
+		forward.y = -modelMatrix[9];
+		forward.z = -modelMatrix[10];
+		vec3.normalize(forward, forward);
+
 
 		//Normalize the orientation vectors
 
 
 
 
-        quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
+        //quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
 
 		//Transform movement into world space using plane.rot
-		let plane_rot_quat = this.q;
+		//let plane_rot_quat = this.q;
 		
 
 		
 
 		//Convert to world space
-		vec3.transformQuat(forward, forward, plane_rot_quat);
-		vec3.transformQuat(up, up, plane_rot_quat);
-		vec3.transformQuat(right, right, plane_rot_quat);
+		//vec3.transformQuat(forward, forward, plane_rot_quat);
+		//vec3.transformQuat(up, up, plane_rot_quat);
+		//vec3.transformQuat(right, right, plane_rot_quat);
 		console.log("Forward: " + forward);
 		console.log("Up: " + up);
 		console.log("Right: " + right);
@@ -84,68 +95,99 @@ class Plane {
 
 		//console.log(plane_rot_quat);
 		//console.log(this.rot);
+
+		//---------------------------------------------------------------------------------------//
+		//The orientation vectors are going to be used for movement. 							 //
+		//These ones aren't, so they are copied to avoid being multiplied by the movement vector.//
+		//---------------------------------------------------------------------------------------//
 		let world_up_glmat = vec3.clone(up);
 		let world_forward_glmat = vec3.clone(forward);
 		let world_right_glmat = vec3.clone(right);
 
-		//Multiply movement by vectors
+		//----------------------------//
+		//Multiply movement by vectors//
+		//----------------------------//
 		let movement_world = createVector(0,0,0);
-		let world_forward = Vec3(forward);
-		let world_right = Vec3(right);
-		let world_up = Vec3(up);
-
-
 		vec3.scale(right, right, movement.x);
 		vec3.scale(up, up, movement.y);
 		vec3.scale(forward, forward, movement.z);
+
+
+		//-------------------------------------------------------//
+		//Convert gl-matrix movement vectors to p5.Vector vectors//
+		//-------------------------------------------------------//
 		let move_right = Vec3(right);
 		let move_forward = Vec3(forward);
 		let move_up = Vec3(up);
+
+		//----------------------------------------------------//
+		//Add the movement vectors up into one movement vector//
+		//----------------------------------------------------//
 		movement_world.add(move_right);
 		movement_world.add(move_up);
 		movement_world.add(move_forward);
 		console.log("Movement World: " + movement_world);
 		console.log("Movement: " + movement);
-		//console.log("Forward after: " + forward);
-		//console.log("Up after: " + up);
-		//console.log("Right after: " + right);
+
+
+		//--------------//
+		//Move the plane//
+		//--------------//
 		this.pos.x += movement_world.x;
 		this.pos.y += movement_world.y;
 		this.pos.z += movement_world.z;
 
-		
+
+		//------------------------------//
+		//Get pitch, roll and yaw inputs//
+		//------------------------------//
 		let yaw = (KeyDown('q') - KeyDown('e')) / 100;
 		let pitch = -(KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
 		let roll = (KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
 
-		//Rotate the matrix by pitch, yaw and roll (XYZ)
+		//----------------------------------------------//
+		//Rotate the matrix by pitch, yaw and roll (XYZ)//
+		//----------------------------------------------//
+
+		//Pitch
+		mat4.rotate(modelMatrix, modelMatrix, pitch, world_right_glmat);
+		
+		//Roll
+		mat4.rotate(modelMatrix, modelMatrix, roll, world_forward_glmat);
+
+		//Yaw
+		mat4.rotate(modelMatrix, modelMatrix, yaw, world_up_glmat);
 
 		//Get the quaternion from the matrix
-
+		let quaternion = quat.create();
+		mat4.getRotation(quaternion, modelMatrix);
+		
 		//Convert the quaternion to euler angles
+		let eulerAngles = quaternion_to_euler(quaternion);
 
 		//Set this.rot to the euler angles
+		this.rot = eulerAngles;
         
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		this.RotateWorld(world_forward_glmat, roll);
+		//this.RotateWorld(world_forward_glmat, roll);
 
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		this.RotateWorld(world_right_glmat, pitch);
+		//this.RotateWorld(world_right_glmat, pitch);
 
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		this.RotateWorld(world_up_glmat, yaw);
+		//this.RotateWorld(world_up_glmat, yaw);
 		
-		quat.normalize(plane_rot_quat, plane_rot_quat);
+		//quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		this.q = plane_rot_quat;
+		//this.q = plane_rot_quat;
 
 
 		//Apply rotation
-		this.rot = quaternion_to_euler(plane_rot_quat);
-        console.log("This.rot = " + this.rot + ", this.quat = " + this.q);
+		//this.rot = quaternion_to_euler(plane_rot_quat);
+        //console.log("This.rot = " + this.rot + ", this.quat = " + this.q);
 		cam_rot.x += movedY * CAM_PITCH_SENS;
 		cam_rot.y += movedX * CAM_YAW_SENS;
 		

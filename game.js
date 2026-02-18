@@ -40,18 +40,37 @@ class Plane {
 		movement.y = (KeyDown('space') - KeyDown('shift')) * 0.7;
 		movement.z = (KeyDown('w') - KeyDown('s')) * 2;
 
-        quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
-		//Transform movement into world space using plane.rot
-		let plane_rot_quat = this.q;
-		//this.rot = quaternion_to_euler(plane_rot_quat);
+		//------------------------------//
+		//NEED TO USE ROTATION MATRICIES//
+		//------------------------------//
+		let rotation = mat4.create();
+		mat4.rotateX(rotation, this.rot.x);
+		mat4.rotateY(rotation, this.rot.y);
+		mat4.rotateZ(rotation, this.rot.z);
+
+		//Get the orientation vectors from the matrix:
+		//https://www.google.com/search?q=get+forward%2C+up%2C+right+from+mat4+gl-matrix&sca_esv=0a6eb62db35b49cd&rlz=1C1GCEA_enNZ1200NZ1200&biw=1920&bih=859&ei=2B-VaZLxLY6OseMPzeedsQw&ved=0ahUKEwiSvcSp--GSAxUOR2wGHc1zJ8YQ4dUDCBM&uact=5&oq=get+forward%2C+up%2C+right+from+mat4+gl-matrix&gs_lp=Egxnd3Mtd2l6LXNlcnAiKmdldCBmb3J3YXJkLCB1cCwgcmlnaHQgZnJvbSBtYXQ0IGdsLW1hdHJpeDIHECEYChigAUiMElDHAljrDnABeACQAQCYAfYDoAHXHKoBBzMtMy41LjG4AQPIAQD4AQGYAgqgAvgcwgIIEAAY7wUYsAPCAgUQIRigAcICBBAhGBWYAwCIBgGQBgGSBwcxLjMtMy42oAe5GrIHBTMtMy42uAf1HMIHAzEuOcgHDoAIAQ&sclient=gws-wiz-serp&safe=active&ssui=on
 		//Declare orientation vectors
-		let forward = vec3.fromValues(0, 0, 1);
-		let up = vec3.fromValues(0, 1, 0);
-		let right = vec3.fromValues(1, 0, 0);
+		let forward = vec3.fromValues(0, 0, -1);//...
+		let up = vec3.fromValues(0, 1, 0);//...
+		let right = vec3.fromValues(1, 0, 0);//...
 
 		let forward_glmat = vec3.clone(forward);
 		let up_glmat = vec3.clone(up);
 		let right_glmat = vec3.clone(right);
+
+		//Normalize the orientation vectors
+
+
+
+
+        quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
+
+		//Transform movement into world space using plane.rot
+		let plane_rot_quat = this.q;
+		
+
+		
 
 		//Convert to world space
 		vec3.transformQuat(forward, forward, plane_rot_quat);
@@ -60,6 +79,8 @@ class Plane {
 		console.log("Forward: " + forward);
 		console.log("Up: " + up);
 		console.log("Right: " + right);
+
+
 
 		//console.log(plane_rot_quat);
 		//console.log(this.rot);
@@ -96,55 +117,50 @@ class Plane {
 		let yaw = (KeyDown('q') - KeyDown('e')) / 100;
 		let pitch = -(KeyDown('arrow_up') - KeyDown('arrow_down')) / 100;
 		let roll = (KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
+
+		//Rotate the matrix by pitch, yaw and roll (XYZ)
+
+		//Get the quaternion from the matrix
+
+		//Convert the quaternion to euler angles
+
+		//Set this.rot to the euler angles
         
 		quat.normalize(plane_rot_quat, plane_rot_quat);
 
-        let pitch_q = quat.create();
-        quat.setAxisAngle(pitch_q, world_right_glmat, pitch);
-        quat.normalize(pitch_q, pitch_q);
+		this.RotateWorld(world_forward_glmat, roll);
 
-		//quat.multiply(plane_rot_quat, pitch_q, plane_rot_quat);
+		quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
+		this.RotateWorld(world_right_glmat, pitch);
 
-        let yaw_q = quat.create();
-        quat.setAxisAngle(yaw_q, world_up_glmat, yaw);
-        quat.normalize(yaw_q, yaw_q);
+		quat.normalize(plane_rot_quat, plane_rot_quat);
 
-		//quat.multiply(plane_rot_quat, yaw_q, plane_rot_quat);
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-
-        let roll_q = quat.create();
-        quat.setAxisAngle(roll_q, world_forward_glmat, roll);
-        quat.normalize(roll_q, roll_q);
-
-		//quat.multiply(plane_rot_quat, roll_q, plane_rot_quat);
-
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-		let pitch_yaw_q = quat.create();
-		quat.multiply(pitch_yaw_q, pitch_q, yaw_q);
-
-		let pitch_yaw_roll_q = quat.create();
-		quat.multiply(pitch_yaw_roll_q, pitch_yaw_q, roll_q);
-
-		quat.multiply(plane_rot_quat, plane_rot_quat, pitch_yaw_roll_q);
+		this.RotateWorld(world_up_glmat, yaw);
+		
+		quat.normalize(plane_rot_quat, plane_rot_quat);
 
 		this.q = plane_rot_quat;
 
+
+		//Apply rotation
 		this.rot = quaternion_to_euler(plane_rot_quat);
         console.log("This.rot = " + this.rot + ", this.quat = " + this.q);
 		cam_rot.x += movedY * CAM_PITCH_SENS;
 		cam_rot.y += movedX * CAM_YAW_SENS;
+		
 		cam_pos = this.pos;
 
-		rotateX(cam_rot.x);
-		rotateY(cam_rot.y);
-		rotateX(-plane.rot.x);
-		rotateY(-plane.rot.y);
-		rotateZ(-plane.rot.z);
-		translate(p5.Vector.mult(cam_pos, -1));
 
 
+		//rotateX(cam_rot.x);
+		//rotateY(cam_rot.y);
+		//rotateX(-plane.rot.x);
+		//rotateY(-plane.rot.y);
+		//rotateZ(-plane.rot.z);
+		//translate(p5.Vector.mult(cam_pos, -1));
+
+		
 
 
 
@@ -154,15 +170,38 @@ class Plane {
 		//Fly
 		
 	}
+	RotateWorld(axis, angle) {
+		let plane_rot_quat = this.q;
+		let rotation = quat.create();
+		quat.setAxisAngle(rotation, axis, angle);
+		quat.multiply(plane_rot_quat, plane_rot_quat, rotation);
+		this.q = plane_rot_quat;
+		this.rot = quaternion_to_euler(plane_rot_quat);
+	}
+
+	RotateLocal(axis, angle) {
+		let plane_rot_quat = this.q;
+		let rotation = quat.create();
+		quat.setAxisAngle(rotation, axis, angle);
+		quat.multiply(plane_rot_quat, rotation, plane_rot_quat);
+		this.q = plane_rot_quat;
+		this.rot = quaternion_to_euler(plane_rot_quat);
+	}
 
 	Draw() {
+		rotateX(cam_rot.x);
+		rotateY(cam_rot.y);
+		translate(-cam_pos.x, -cam_pos.y, -cam_pos.z);
 		push();
+		
 		translate(this.pos);
 		rotateX(this.rot.x);
 		rotateY(this.rot.y);
 		rotateZ(this.rot.z);
 		model(this.model);
 		pop();
+
+		
 	}
 }
 
@@ -179,7 +218,7 @@ var cnv_height;
 
 //Camera
 var fbo;
-const FBO_SCALE = 2000;
+const FBO_SCALE = 3000;
 var FBO_WIDTH;
 var FBO_HEIGHT;
 
@@ -253,9 +292,15 @@ function setup() {
     var vec_2_rotate = vec3.fromValues(0, 1, 1);
     var axis = vec3.fromValues(1, 0, 0);
     var rotation = quat.create();
-    quat.setAxisAngle(rotation, axis, -Math.PI / 2);
+    quat.setAxisAngle(rotation, axis, -Math.PI / 2); //90 degrees
     vec3.transformQuat(vec_2_rotate, vec_2_rotate, rotation);
     console.log("Vec " + vec_2_rotate + " should be 0, 1, -1");
+
+	var axis2 = vec3.fromValues(0, 1, 0);
+	var rotation2 = quat.create();
+	quat.setAxisAngle(rotation2, axis2, -Math.PI); //180 degrees
+	vec3.transformQuat(vec_2_rotate, vec_2_rotate, rotation2);
+	console.log("Vec " + vec_2_rotate + " should be 0, 1, 1");
 
 	//Initialize canvas
 	cnv_width = windowWidth;
@@ -275,7 +320,7 @@ function setup() {
 	cam_rot = Vec3(0, 0, 0);
 
 	//Objects
-	plane = new Plane(plane_model, createVector(0, 100, 0), Vec3(0, 45, 0));
+	plane = new Plane(plane_model, createVector(0, 100, 0), createVector(0, 0, -90));
 	terrain = new Chunk(createVector(0, -100, 0), 100);
 }
 

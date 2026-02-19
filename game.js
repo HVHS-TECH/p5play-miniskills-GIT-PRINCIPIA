@@ -29,8 +29,6 @@ class Plane {
 		this.model = model;
 		this.pos = pos;
 		this.rot = rot;
-		this.q = quat.create();
-		quat.fromEuler(this.q, rot.x, rot.y, rot.z);
 	}
 
 	Update() {
@@ -40,65 +38,37 @@ class Plane {
 		movement.y = (KeyDown('space') - KeyDown('shift')) * 0.7;
 		movement.z = (KeyDown('w') - KeyDown('s')) * 2;
 
-		//------------------------------//
-		//NEED TO USE ROTATION MATRICIES//
-		//------------------------------//
-		let modelMatrix = mat4.create();
-		//Make 3 rotation matrices and 'add' them instead
-		mat4.rotateX(modelMatrix, this.rot.x);
-		mat4.rotateY(modelMatrix, this.rot.y);
-		mat4.rotateZ(modelMatrix, this.rot.z);
+		//-----------------------------------//
+		//Initialize quaternion from rotation//
+		//-----------------------------------//
+		let rotation = quat.create();
+		quat.fromEuler(rotation, this.rot.x, this.rot.y, this.rot.z); //Problem?
+		quat.normalize(rotation, rotation);
 
-		//Get the orientation vectors from the matrix
-		let forward = vec3.create();
-		let right = vec3.create();
-		let up = vec3.create();
+		//------------------------------------------------------------//
+		//Initialize rotation vectors and rotate them into world space//
+		//------------------------------------------------------------//
 
-		right.x = modelMatrix[0];
-		right.y = modelMatrix[1];
-		right.z = modelMatrix[2];
-		vec3.normalize(right, right);
+		//Initialize the orientation vectors
+		let forward = vec3.fromValues(0, 0, -1);
+		let right = vec3.fromValues(1, 0, 0);
+		let up = vec3.fromValues(0, 1, 0);
 
-		up.x = modelMatrix[4];
-		up.y = modelMatrix[5];
-		up.z = modelMatrix[6];
-		vec3.normalize(up, up);
+		//Rotate the orientation vectors into world space
+		vec3.transformQuat(forward, forward, rotation);
+		vec3.transformQuat(right, right, rotation);
+		vec3.transformQuat(up, up, rotation);
 
-		forward.x = -modelMatrix[8];
-		forward.y = -modelMatrix[9];
-		forward.z = -modelMatrix[10];
-		vec3.normalize(forward, forward);
-
-
-		//Normalize the orientation vectors
-
-
-
-
-        //quat.fromEuler(this.q, this.rot.x, this.rot.y, this.rot.z);
-
-		//Transform movement into world space using plane.rot
-		//let plane_rot_quat = this.q;
-		
-
-		
-
-		//Convert to world space
-		//vec3.transformQuat(forward, forward, plane_rot_quat);
-		//vec3.transformQuat(up, up, plane_rot_quat);
-		//vec3.transformQuat(right, right, plane_rot_quat);
+		//Debug logging
 		console.log("Forward: " + forward);
 		console.log("Up: " + up);
 		console.log("Right: " + right);
 
 
-
-		//console.log(plane_rot_quat);
-		//console.log(this.rot);
-
 		//---------------------------------------------------------------------------------------//
 		//The orientation vectors are going to be used for movement. 							 //
-		//These ones aren't, so they are copied to avoid being multiplied by the movement vector.//
+		//But, they are also going to be used for rotations. These ones are for the rotations,   //
+		//so they are copied to avoid being multiplied by the movement vector.                   //
 		//---------------------------------------------------------------------------------------//
 		let world_up_glmat = vec3.clone(up);
 		let world_forward_glmat = vec3.clone(forward);
@@ -115,6 +85,7 @@ class Plane {
 
 		//-------------------------------------------------------//
 		//Convert gl-matrix movement vectors to p5.Vector vectors//
+		//This means that they can be easily added to this.pos   //
 		//-------------------------------------------------------//
 		let move_right = Vec3(right);
 		let move_forward = Vec3(forward);
@@ -149,45 +120,24 @@ class Plane {
 		//Rotate the matrix by pitch, yaw and roll (XYZ)//
 		//----------------------------------------------//
 
-		//Pitch
-		mat4.rotate(modelMatrix, modelMatrix, pitch, world_right_glmat);
-		
-		//Roll
-		mat4.rotate(modelMatrix, modelMatrix, roll, world_forward_glmat);
+		//let local_forward = vec3.fromValues(0, 0, -1);
+		//let local_up = vec3.fromValues(0, 1, 0);
+		//let local_right = vec3.fromValues(1, 0, 0);
+		this.RotateWorld(world_up_glmat, yaw);
+		this.RotateWorld(world_right_glmat, pitch);
+		this.RotateWorld(world_forward_glmat, roll);
 
-		//Yaw
-		mat4.rotate(modelMatrix, modelMatrix, yaw, world_up_glmat);
+		//-------------------------------------------------------//
+		//Convert the quaternion to euler angles and set this.rot//
+		//-------------------------------------------------------//
 
-		//Get the quaternion from the matrix
-		let quaternion = quat.create();
-		mat4.getRotation(quaternion, modelMatrix);
-		
-		//Convert the quaternion to euler angles
-		let eulerAngles = quaternion_to_euler(quaternion);
+		//Get euler angles
+		let eulerAngles = quaternion_to_euler(rotation); //Problem?
 
 		//Set this.rot to the euler angles
-		this.rot = eulerAngles;
+		//this.rot = eulerAngles;
         
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-
-		//this.RotateWorld(world_forward_glmat, roll);
-
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-
-		//this.RotateWorld(world_right_glmat, pitch);
-
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-
-		//this.RotateWorld(world_up_glmat, yaw);
 		
-		//quat.normalize(plane_rot_quat, plane_rot_quat);
-
-		//this.q = plane_rot_quat;
-
-
-		//Apply rotation
-		//this.rot = quaternion_to_euler(plane_rot_quat);
-        //console.log("This.rot = " + this.rot + ", this.quat = " + this.q);
 		cam_rot.x += movedY * CAM_PITCH_SENS;
 		cam_rot.y += movedX * CAM_YAW_SENS;
 		
@@ -213,7 +163,10 @@ class Plane {
 		
 	}
 	RotateWorld(axis, angle) {
-		let plane_rot_quat = this.q;
+		let plane_rot_quat = quat.create();
+		quat.fromEuler(plane_rot_quat, this.rot.x, this.rot.y, this.rot.z); 
+		quat.normalize(plane_rot_quat, plane_rot_quat);
+
 		let rotation = quat.create();
 		quat.setAxisAngle(rotation, axis, angle);
 		quat.multiply(plane_rot_quat, plane_rot_quat, rotation);
@@ -222,11 +175,13 @@ class Plane {
 	}
 
 	RotateLocal(axis, angle) {
-		let plane_rot_quat = this.q;
+		let plane_rot_quat = quat.create();
+		quat.fromEuler(plane_rot_quat, this.rot.x, this.rot.y, this.rot.z); 
+		quat.normalize(plane_rot_quat, plane_rot_quat);
+
 		let rotation = quat.create();
 		quat.setAxisAngle(rotation, axis, angle);
 		quat.multiply(plane_rot_quat, rotation, plane_rot_quat);
-		this.q = plane_rot_quat;
 		this.rot = quaternion_to_euler(plane_rot_quat);
 	}
 
@@ -344,6 +299,9 @@ function setup() {
 	vec3.transformQuat(vec_2_rotate, vec_2_rotate, rotation2);
 	console.log("Vec " + vec_2_rotate + " should be 0, 1, 1");
 
+
+
+
 	//Initialize canvas
 	cnv_width = windowWidth;
 	cnv_height = windowHeight - 100;
@@ -434,10 +392,10 @@ function windowResized() {
 
 	cnv_width = windowWidth;
 	cnv_height = windowHeight - 100;
-	cnv.resize(cnv_width, cnv_height);
+	if (cnv != undefined) cnv.resize(cnv_width, cnv_height);
 	FBO_WIDTH = FBO_SCALE;
 	FBO_HEIGHT = FBO_SCALE * cnv_height / cnv_width;
-	fbo.resize(FBO_WIDTH, FBO_HEIGHT);
+	if (fbo != undefined) fbo.resize(FBO_WIDTH, FBO_HEIGHT);
 
 }
 

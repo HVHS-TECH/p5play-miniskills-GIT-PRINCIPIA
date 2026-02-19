@@ -117,25 +117,13 @@ class Plane {
 		let roll = (KeyDown('arrow_right') - KeyDown('arrow_left')) / 100;
 
 		//----------------------------------------------//
-		//Rotate the matrix by pitch, yaw and roll (XYZ)//
+		//Rotate the plane by pitch, yaw and roll (XYZ)//
 		//----------------------------------------------//
 
-		//let local_forward = vec3.fromValues(0, 0, -1);
-		//let local_up = vec3.fromValues(0, 1, 0);
-		//let local_right = vec3.fromValues(1, 0, 0);
 		this.RotateWorld(world_up_glmat, yaw);
 		this.RotateWorld(world_right_glmat, pitch);
 		this.RotateWorld(world_forward_glmat, roll);
 
-		//-------------------------------------------------------//
-		//Convert the quaternion to euler angles and set this.rot//
-		//-------------------------------------------------------//
-
-		//Get euler angles
-		let eulerAngles = quaternion_to_euler(rotation); //Problem?
-
-		//Set this.rot to the euler angles
-		//this.rot = eulerAngles;
         
 		
 		cam_rot.x += movedY * CAM_PITCH_SENS;
@@ -365,6 +353,27 @@ function draw() {
 
 	scale(0.01,-0.01,0.01);
 	box(); //Debug cube
+
+	//Right
+	push();
+	translate(100, 0, 0);
+	fill('red');
+	box();
+	pop();
+
+	//Up
+	push();
+	translate(0, 100, 0);
+	fill('green');
+	box();
+	pop();
+
+	//Forward
+	push();
+	translate(0, 0, 100);
+	fill('blue');
+	box();
+	pop();
 	
 
 

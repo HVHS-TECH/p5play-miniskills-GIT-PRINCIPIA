@@ -1,7 +1,13 @@
 precision highp float;
 varying vec2 vTexCoord;
-uniform sampler2D tex0;
+uniform int map[400];
+
 void main() {
-    vec4 colour = texture2D(tex0, vTexCoord);
-    gl_FragColor = vec4(vTexCoord.x, vTexCoord.y, 1.0, 1.0);
+
+    int val = 0;
+    if (vTexCoord.x + vTexCoord.y * 20 < 399) {
+        val = map[vTexCoord.x + vTexCoord.y * 20];
+    }
+    vec4 colour = vec4(val, 1, 1, 1);
+    gl_FragColor = colour;
 }

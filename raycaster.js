@@ -33,6 +33,29 @@ var map =
 "11111111111111111111"
 ;
 var mapList = new Array(400).fill(0);
+var map = 
+"11111111111111111111" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"11111111111111111111"
+;
+var mapList = new Array(400).fill(0);
 
 
 //FBO
@@ -70,6 +93,9 @@ function preload() {
     for (var i = 0; i < 400; i++) {
         mapList[i] = Number(map[i]);
     }
+    for (var i = 0; i < 400; i++) {
+        mapList[i] = Number(map[i]);
+    }
 
     
     
@@ -91,6 +117,7 @@ function setup() {
     //Initialize fbo
     fbo_width = FBO_SCALE;
     fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
+    fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
     fbo = createFramebuffer();
 	fbo.resize(fbo_width, fbo_height);
 
@@ -107,6 +134,7 @@ function setup() {
 
 //------------------------------//
 //draw()                        //
+//Draw functiondraws the scene//
 //Draw functiondraws the scene//
 //------------------------------//
 function draw() {
@@ -160,6 +188,7 @@ function windowResized() {
 	cnv_height = windowHeight - 100;
 	cnv.resize(cnv_width, cnv_height);
 	fbo_width = FBO_SCALE;
+	fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
 	fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
 	fbo.resize(fbo_width, fbo_height);
 }

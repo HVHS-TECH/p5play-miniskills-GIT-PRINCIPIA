@@ -10,28 +10,29 @@
 
 //World
 var img;
-var data = [
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-];
+var map = 
+"11111111111111111111" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"10000000000000000001" +
+"11111111111111111111"
+;
+var mapList = new Array(400).fill(0);
 
 
 //FBO
@@ -48,6 +49,13 @@ var cnv_width;
 var cnv_height;
 
 
+//CAMERA
+var player_x, player_z;
+var player_dir;
+const FOV = 60;
+
+
+
 //-----------------------------------//
 //preload()                          //
 //Load function, loads the game files//
@@ -59,9 +67,9 @@ function preload() {
     fbo_shader = loadShader('../assets/shaders/shader.vert', '../assets/shaders/shader.frag');
 
 
-
-
-    //Load image from map data
+    for (var i = 0; i < 400; i++) {
+        mapList[i] = Number(map[i]);
+    }
 
     
     
@@ -82,19 +90,24 @@ function setup() {
     
     //Initialize fbo
     fbo_width = FBO_SCALE;
-    fbo_height = FBO_SCALE * cnv_height / cnv_width;
+    fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
     fbo = createFramebuffer();
 	fbo.resize(fbo_width, fbo_height);
 
 
     
+    //Player
+    player_x = 2;
+    player_z = 2;
+    player_dir = 0;
 
+    
 }
 
 
 //------------------------------//
 //draw()                        //
-//Draw function, draws the scene//
+//Draw functiondraws the scene//
 //------------------------------//
 function draw() {
     fbo.begin();
@@ -102,8 +115,14 @@ function draw() {
     background('black');
 
     shader(fbo_shader);
-    //Send the map to the shader
-    fbo_shader.setUniform('tex0', img); 
+    //Send the uniforms to the shader
+    fbo_shader.setUniform('tex0', mapList); 
+    fbo_shader.setUniform('player_x', player_x); 
+    fbo_shader.setUniform('player_z', player_z); 
+    fbo_shader.setUniform('player_dir', player_dir); 
+    fbo_shader.setUniform('width', fbo_width); 
+    
+    fbo_shader.setUniform('FOV', FOV); 
     plane(fbo_width, fbo_height);
 
     fbo.end();
@@ -141,6 +160,6 @@ function windowResized() {
 	cnv_height = windowHeight - 100;
 	cnv.resize(cnv_width, cnv_height);
 	fbo_width = FBO_SCALE;
-	fbo_height = FBO_SCALE * cnv_height / cnv_width;
+	fbo_height = Math.round(FBO_SCALE * cnv_height / cnv_width);
 	fbo.resize(fbo_width, fbo_height);
 }
